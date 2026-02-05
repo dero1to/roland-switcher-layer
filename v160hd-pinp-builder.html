@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V-160HD PinP レイアウトビルダー</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #08080b;
+    --surface: #111116;
+    --surface2: #18181f;
+    --border: #252530;
+    --border-hover: #3a3a4a;
+    --text: #e0e0e8;
+    --text-dim: #777788;
+    --text-muted: #555566;
+    --accent: #6366f1;
+    --accent-dim: rgba(99,102,241,0.12);
+    --green: #34d399;
+    --green-dim: rgba(52,211,153,0.1);
+    --pinp-colors: #4a90d9, #d94a6e, #e6a030, #9b59b6;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Noto Sans JP', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── App Shell ── */
+  .app {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .header {
+    grid-column: 1 / -1;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+  }
+  .header h1 {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header .pipe {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+  }
+  .header .subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+  .header .badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  .sidebar-section {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .sidebar-section-header:hover {
+    background: rgba(255,255,255,0.02);
+  }
+  .sidebar-section-header h3 {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-section-header h3 .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .pinp-toggle {
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    background: #2a2a38;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .pinp-toggle.active { background: var(--accent); }
+  .pinp-toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+  }
+  .pinp-toggle.active::after { transform: translateX(16px); }
+
+  .sidebar-section-body {
+    padding: 0 20px 16px;
+  }
+
+  .param-group {
+    margin-bottom: 12px;
+  }
+  .param-group-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .param-row {
+    display: grid;
+    grid-template-columns: 52px 1fr 64px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .param-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #2a2a38;
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .param-value {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    text-align: right;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    width: 64px;
+  }
+  .param-value:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* ── Main content ── */
+  .main {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+  }
+
+  /* ── Preview ── */
+  .preview-container {
+    position: relative;
+  }
+  .preview-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .monitor {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #0d0d12;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .monitor-grid {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 10% 10%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .monitor-center-h {
+    position: absolute; top: 50%; left: 0; right: 0;
+    height: 1px; background: rgba(255,255,255,0.04);
+    z-index: 1; pointer-events: none;
+  }
+  .monitor-center-v {
+    position: absolute; left: 50%; top: 0; bottom: 0;
+    width: 1px; background: rgba(255,255,255,0.04);
+    z-index: 1; pointer-events: none;
+  }
+
+  .dsk-outline {
+    position: absolute; inset: 0;
+    border: 2px dashed var(--green);
+    opacity: 0.4;
+    z-index: 20;
+    pointer-events: none;
+    border-radius: 3px;
+  }
+  .dsk-badge {
+    position: absolute; top: 6px; right: 6px;
+    font-family: var(--mono); font-size: 9px;
+    color: var(--green); background: var(--green-dim);
+    border: 1px solid rgba(52,211,153,0.2);
+    padding: 2px 6px; border-radius: 3px;
+    z-index: 21; pointer-events: none;
+  }
+
+  .pinp-rect {
+    position: absolute;
+    border: 2px solid;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease-out;
+  }
+  .pinp-rect-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+  .pinp-rect-label small {
+    display: block;
+    font-size: 9px;
+    opacity: 0.6;
+    margin-top: 2px;
+  }
+
+  .pinp-rect[data-pinp="1"] { border-color: #4a90d9; background: rgba(74,144,217,0.07); }
+  .pinp-rect[data-pinp="1"] .pinp-rect-label { color: #4a90d9; }
+  .pinp-rect[data-pinp="2"] { border-color: #d94a6e; background: rgba(217,74,110,0.07); }
+  .pinp-rect[data-pinp="2"] .pinp-rect-label { color: #d94a6e; }
+  .pinp-rect[data-pinp="3"] { border-color: #e6a030; background: rgba(230,160,48,0.07); }
+  .pinp-rect[data-pinp="3"] .pinp-rect-label { color: #e6a030; }
+  .pinp-rect[data-pinp="4"] { border-color: #9b59b6; background: rgba(155,89,182,0.07); }
+  .pinp-rect[data-pinp="4"] .pinp-rect-label { color: #9b59b6; }
+
+  /* ── Output table ── */
+  .output-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .output-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .output-card h4 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .coord-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .coord-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .coord-table td {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    color: var(--text-dim);
+  }
+  .coord-table tr:last-child td { border-bottom: none; }
+  .coord-table .pinp-name { color: var(--text); font-weight: 500; }
+
+  .dsk-info {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .dsk-info strong { color: var(--text); font-weight: 600; }
+  .dsk-info code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--green);
+  }
+
+  /* ── Preset bar ── */
+  .presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .preset-btn {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .preset-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+    background: var(--surface2);
+  }
+  .preset-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* ── Export ── */
+  .export-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .export-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .export-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .export-btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .export-btn.primary:hover {
+    opacity: 0.9;
+  }
+  .toast {
+    font-size: 11px;
+    color: var(--green);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <h1>V-160HD PinP レイアウトビルダー</h1>
+    <div class="pipe"></div>
+    <span class="subtitle">DSKオーバーレイデザイン用</span>
+    <span class="badge">1920 × 1080</span>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar"></div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Presets -->
+    <div>
+      <div class="preview-label">プリセット</div>
+      <div class="presets" id="presets"></div>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-container">
+      <div class="preview-label">プレビュー</div>
+      <div class="monitor" id="monitor">
+        <div class="monitor-grid"></div>
+        <div class="monitor-center-h"></div>
+        <div class="monitor-center-v"></div>
+        <div class="dsk-outline"></div>
+        <div class="dsk-badge">DSK</div>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="output-section">
+      <div class="output-card">
+        <h4>ピクセル座標</h4>
+        <table class="coord-table" id="coordTable">
+          <thead><tr><th>PinP</th><th>X</th><th>Y</th><th>W</th><th>H</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="output-card">
+        <h4>DSK設計情報</h4>
+        <div class="dsk-info" id="dskInfo"></div>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="export-bar">
+      <button class="export-btn primary" id="copyJson">JSON コピー</button>
+      <button class="export-btn" id="copyText">テキスト コピー</button>
+      <span class="toast" id="toast">コピーしました</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const W = 1920, H = 1080;
+const COLORS = { 1: '#4a90d9', 2: '#d94a6e', 3: '#e6a030', 4: '#9b59b6' };
+
+const state = {
+  pinps: {
+    1: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    2: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    3: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    4: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+  },
+  activePreset: null
+};
+
+const PRESETS = [
+  {
+    name: 'レイアウト 1',
+    desc: '左メイン＋右クロップ',
+    config: {
+      1: { enabled: true, cropH: 100, cropV: 100, posH: -50, posV: 0, zoom: 71.2, imgH: 0, imgV: 0, imgZoom: 100 },
+      2: { enabled: true, cropH: 40.4, cropV: 100, posH: 50, posV: 0, zoom: 71.2, imgH: 0, imgV: 0, imgZoom: 100 },
+      3: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+      4: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    }
+  },
+  {
+    name: 'レイアウト 2',
+    desc: '3カラム',
+    config: {
+      1: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 56.1, imgH: 0, imgV: 0, imgZoom: 100 },
+      2: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+      3: { enabled: true, cropH: 29.2, cropV: 100, posH: -50, posV: 0, zoom: 75, imgH: 0, imgV: 0, imgZoom: 100 },
+      4: { enabled: true, cropH: 29.2, cropV: 100, posH: 50, posV: 0, zoom: 75, imgH: 0, imgV: 0, imgZoom: 100 },
+    }
+  },
+  {
+    name: 'レイアウト 3',
+    desc: '左右均等分割',
+    config: {
+      1: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+      2: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+      3: { enabled: true, cropH: 50, cropV: 100, posH: -50, posV: 0, zoom: 100, imgH: 0, imgV: 0, imgZoom: 100 },
+      4: { enabled: true, cropH: 50, cropV: 100, posH: 50, posV: 0, zoom: 100, imgH: 0, imgV: 0, imgZoom: 100 },
+    }
+  }
+];
+
+const PARAMS = [
+  { group: 'クロッピング', items: [
+    { key: 'cropH', label: 'H', min: 1, max: 100, step: 0.1, unit: '%' },
+    { key: 'cropV', label: 'V', min: 1, max: 100, step: 0.1, unit: '%' },
+  ]},
+  { group: '小画面', items: [
+    { key: 'posH', label: 'H', min: -50, max: 50, step: 0.1, unit: '%' },
+    { key: 'posV', label: 'V', min: -50, max: 50, step: 0.1, unit: '%' },
+    { key: 'zoom', label: 'Zoom', min: 1, max: 100, step: 0.1, unit: '%' },
+  ]},
+];
+
+// ── Calculate pixel rect for a PinP ──
+function calcRect(p) {
+  const zoomFrac = p.zoom / 100;
+  const fullW = W * zoomFrac;
+  const fullH = H * zoomFrac;
+  const visW = fullW * (p.cropH / 100);
+  const visH = fullH * (p.cropV / 100);
+  // posH: -50=left edge, 0=center, 50=right edge
+  // Available space = W - visW, posH maps [-50,50] to [0, availSpace]
+  const availX = W - visW;
+  const availY = H - visH;
+  const x = availX * ((p.posH + 50) / 100);
+  const y = availY * ((p.posV + 50) / 100);
+  return {
+    x: Math.round(x),
+    y: Math.round(y),
+    w: Math.round(visW),
+    h: Math.round(visH)
+  };
+}
+
+// ── Build sidebar ──
+function buildSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = '';
+  for (let i = 1; i <= 4; i++) {
+    const p = state.pinps[i];
+    const color = COLORS[i];
+    const section = document.createElement('div');
+    section.className = 'sidebar-section';
+
+    const header = document.createElement('div');
+    header.className = 'sidebar-section-header';
+    header.innerHTML = `
+      <h3><span class="dot" style="background:${color}"></span>PinP ${i}</h3>
+    `;
+    const toggle = document.createElement('button');
+    toggle.className = 'pinp-toggle' + (p.enabled ? ' active' : '');
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      p.enabled = !p.enabled;
+      toggle.classList.toggle('active', p.enabled);
+      body.style.display = p.enabled ? 'block' : 'none';
+      state.activePreset = null;
+      updatePresetButtons();
+      render();
+    });
+    header.appendChild(toggle);
+
+    const body = document.createElement('div');
+    body.className = 'sidebar-section-body';
+    body.style.display = p.enabled ? 'block' : 'none';
+
+    for (const group of PARAMS) {
+      const g = document.createElement('div');
+      g.className = 'param-group';
+      g.innerHTML = `<div class="param-group-title">${group.group}</div>`;
+      for (const item of group.items) {
+        const row = document.createElement('div');
+        row.className = 'param-row';
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = item.min;
+        slider.max = item.max;
+        slider.step = item.step;
+        slider.value = p[item.key];
+
+        const valInput = document.createElement('input');
+        valInput.type = 'text';
+        valInput.className = 'param-value';
+        valInput.value = p[item.key].toFixed(1) + item.unit;
+
+        slider.addEventListener('input', () => {
+          p[item.key] = parseFloat(slider.value);
+          valInput.value = p[item.key].toFixed(1) + item.unit;
+          state.activePreset = null;
+          updatePresetButtons();
+          render();
+        });
+
+        valInput.addEventListener('focus', () => {
+          valInput.value = p[item.key].toFixed(1);
+          valInput.select();
+        });
+        valInput.addEventListener('blur', () => {
+          let v = parseFloat(valInput.value);
+          if (isNaN(v)) v = p[item.key];
+          v = Math.max(item.min, Math.min(item.max, v));
+          p[item.key] = v;
+          slider.value = v;
+          valInput.value = v.toFixed(1) + item.unit;
+          state.activePreset = null;
+          updatePresetButtons();
+          render();
+        });
+        valInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') valInput.blur();
+        });
+
+        row.innerHTML = `<span class="param-label">${item.label}</span>`;
+        row.appendChild(slider);
+        row.appendChild(valInput);
+        g.appendChild(row);
+      }
+      body.appendChild(g);
+    }
+
+    header.addEventListener('click', () => {
+      if (!p.enabled) return;
+      const isVisible = body.style.display !== 'none';
+      body.style.display = isVisible ? 'none' : 'block';
+    });
+
+    section.appendChild(header);
+    section.appendChild(body);
+    sb.appendChild(section);
+  }
+}
+
+// ── Build presets ──
+function buildPresets() {
+  const container = document.getElementById('presets');
+  container.innerHTML = '';
+  PRESETS.forEach((preset, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.textContent = preset.name;
+    btn.title = preset.desc;
+    btn.dataset.idx = idx;
+    btn.addEventListener('click', () => {
+      applyPreset(idx);
+    });
+    container.appendChild(btn);
+  });
+}
+
+function applyPreset(idx) {
+  const preset = PRESETS[idx];
+  for (let i = 1; i <= 4; i++) {
+    Object.assign(state.pinps[i], JSON.parse(JSON.stringify(preset.config[i])));
+  }
+  state.activePreset = idx;
+  buildSidebar();
+  updatePresetButtons();
+  render();
+}
+
+function updatePresetButtons() {
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.idx) === state.activePreset);
+  });
+}
+
+// ── Render ──
+function render() {
+  const monitor = document.getElementById('monitor');
+  // Remove old pinp rects
+  monitor.querySelectorAll('.pinp-rect').forEach(el => el.remove());
+
+  const rects = [];
+
+  // Render PinPs in order (1 bottom, 4 top)
+  for (let i = 1; i <= 4; i++) {
+    const p = state.pinps[i];
+    if (!p.enabled) continue;
+    const r = calcRect(p);
+    rects.push({ id: i, ...r, params: p });
+
+    const el = document.createElement('div');
+    el.className = 'pinp-rect';
+    el.dataset.pinp = i;
+    el.style.left = (r.x / W * 100) + '%';
+    el.style.top = (r.y / H * 100) + '%';
+    el.style.width = (r.w / W * 100) + '%';
+    el.style.height = (r.h / H * 100) + '%';
+    el.style.zIndex = 4 + i;
+    el.innerHTML = `<div class="pinp-rect-label">PinP ${i}<small>${r.w}×${r.h}</small></div>`;
+    monitor.appendChild(el);
+  }
+
+  // Coord table
+  const tbody = document.querySelector('#coordTable tbody');
+  tbody.innerHTML = '';
+  for (const r of rects) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="pinp-name" style="color:${COLORS[r.id]}">PinP ${r.id}</td>
+      <td>${r.x}</td><td>${r.y}</td><td>${r.w}</td><td>${r.h}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // DSK info
+  const dskInfo = document.getElementById('dskInfo');
+  if (rects.length === 0) {
+    dskInfo.innerHTML = 'PinPが未設定です。DSKは画面全体 <code>1920×1080</code> を自由に使えます。';
+    return;
+  }
+
+  let minY = H, maxY = 0, minX = W, maxX = 0;
+  for (const r of rects) {
+    minY = Math.min(minY, r.y);
+    maxY = Math.max(maxY, r.y + r.h);
+    minX = Math.min(minX, r.x);
+    maxX = Math.max(maxX, r.x + r.w);
+  }
+  const topGap = minY;
+  const bottomGap = H - maxY;
+  const leftGap = minX;
+  const rightGap = W - maxX;
+
+  let html = '<strong>映像と干渉しない領域：</strong><br>';
+  if (topGap > 0) html += `上部 <code>${topGap}px</code><br>`;
+  if (bottomGap > 0) html += `下部 <code>${bottomGap}px</code><br>`;
+  if (leftGap > 0) html += `左側 <code>${leftGap}px</code><br>`;
+  if (rightGap > 0) html += `右側 <code>${rightGap}px</code><br>`;
+  if (topGap <= 0 && bottomGap <= 0 && leftGap <= 0 && rightGap <= 0) {
+    html += '余白なし — DSKは映像に重なります。半透明背景等で視認性を確保してください。<br>';
+  }
+
+  // Check overlaps
+  const overlaps = [];
+  for (let a = 0; a < rects.length; a++) {
+    for (let b = a + 1; b < rects.length; b++) {
+      const ra = rects[a], rb = rects[b];
+      const ox1 = Math.max(ra.x, rb.x);
+      const oy1 = Math.max(ra.y, rb.y);
+      const ox2 = Math.min(ra.x + ra.w, rb.x + rb.w);
+      const oy2 = Math.min(ra.y + ra.h, rb.y + rb.h);
+      if (ox1 < ox2 && oy1 < oy2) {
+        const ow = ox2 - ox1;
+        const oh = oy2 - oy1;
+        overlaps.push({ a: ra.id, b: rb.id, x: ox1, y: oy1, w: ow, h: oh });
+      }
+    }
+  }
+  if (overlaps.length > 0) {
+    html += '<br><strong style="color:#d94a6e;">⚠ 重なり検出：</strong><br>';
+    for (const o of overlaps) {
+      const area = o.w * o.h;
+      const pct = (area / (W * H) * 100).toFixed(1);
+      html += `PinP ${o.a} × PinP ${o.b}：<code>${o.w}×${o.h}px</code>（${area.toLocaleString()}px² / 画面の${pct}%）`;
+      html += `<br><span style="font-size:11px;color:#888;">位置 X=${o.x} Y=${o.y}〜X=${o.x+o.w} Y=${o.y+o.h}</span><br>`;
+    }
+  }
+
+  dskInfo.innerHTML = html;
+}
+
+// ── Export ──
+function getExportData() {
+  const data = { resolution: '1920x1080', pinps: [] };
+  for (let i = 1; i <= 4; i++) {
+    const p = state.pinps[i];
+    if (!p.enabled) continue;
+    const r = calcRect(p);
+    data.pinps.push({
+      id: i,
+      params: {
+        cropH: p.cropH, cropV: p.cropV,
+        posH: p.posH, posV: p.posV,
+        zoom: p.zoom
+      },
+      pixel: { x: r.x, y: r.y, w: r.w, h: r.h }
+    });
+  }
+  return data;
+}
+
+document.getElementById('copyJson').addEventListener('click', () => {
+  const json = JSON.stringify(getExportData(), null, 2);
+  navigator.clipboard.writeText(json).then(() => showToast());
+});
+
+document.getElementById('copyText').addEventListener('click', () => {
+  const d = getExportData();
+  let text = `V-160HD PinP レイアウト (${d.resolution})\n${'─'.repeat(40)}\n`;
+  for (const p of d.pinps) {
+    text += `\nPinP ${p.id}\n`;
+    text += `  クロッピング: H(${p.params.cropH}%) V(${p.params.cropV}%)\n`;
+    text += `  小画面: H(${p.params.posH}%) V(${p.params.posV}%) Zoom(${p.params.zoom}%)\n`;
+    text += `  ピクセル: X=${p.pixel.x} Y=${p.pixel.y} W=${p.pixel.w} H=${p.pixel.h}\n`;
+  }
+  navigator.clipboard.writeText(text).then(() => showToast());
+});
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+// ── Init ──
+buildPresets();
+applyPreset(0);
+</script>
+
+</body>
+</html>

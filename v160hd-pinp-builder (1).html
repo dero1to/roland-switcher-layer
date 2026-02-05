@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V-160HD PinP レイアウトビルダー</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #08080b;
+    --surface: #111116;
+    --surface2: #18181f;
+    --border: #252530;
+    --border-hover: #3a3a4a;
+    --text: #e0e0e8;
+    --text-dim: #777788;
+    --text-muted: #555566;
+    --accent: #6366f1;
+    --accent-dim: rgba(99,102,241,0.12);
+    --green: #34d399;
+    --green-dim: rgba(52,211,153,0.1);
+    --orange: #f59e0b;
+    --orange-dim: rgba(245,158,11,0.1);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Noto Sans JP', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  /* ── App Shell ── */
+  .app { display: grid; grid-template-columns: 360px 1fr; grid-template-rows: auto 1fr; min-height: 100vh; }
+
+  /* ── Header ── */
+  .header {
+    grid-column: 1 / -1; padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px; background: var(--surface);
+  }
+  .header h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .pipe { width: 1px; height: 20px; background: var(--border); }
+  .header .subtitle { font-size: 12px; color: var(--text-dim); font-weight: 400; }
+  .header .badge { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--accent); background: var(--accent-dim); padding: 4px 10px; border-radius: 4px; }
+
+  /* ── Mode tabs ── */
+  .mode-tabs {
+    grid-column: 1 / -1; display: flex; gap: 0; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .mode-tab {
+    flex: 1; padding: 12px 20px; border: none; background: transparent;
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+    border-bottom: 2px solid transparent; text-align: center;
+  }
+  .mode-tab:hover { color: var(--text-dim); }
+  .mode-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-dim); }
+  .mode-tab .mode-icon { margin-right: 6px; }
+
+  /* ── Sidebar ── */
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; }
+
+  .sidebar-section { border-bottom: 1px solid var(--border); }
+  .sidebar-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; cursor: pointer; user-select: none; transition: background 0.15s;
+  }
+  .sidebar-section-header:hover { background: rgba(255,255,255,0.02); }
+  .sidebar-section-header h3 {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sidebar-section-header h3 .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .pinp-toggle {
+    width: 36px; height: 20px; border-radius: 10px; background: #2a2a38;
+    border: none; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0;
+  }
+  .pinp-toggle.active { background: var(--accent); }
+  .pinp-toggle::after {
+    content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; top: 3px; left: 3px; transition: transform 0.2s;
+  }
+  .pinp-toggle.active::after { transform: translateX(16px); }
+
+  .sidebar-section-body { padding: 0 20px 16px; }
+
+  .param-group { margin-bottom: 12px; }
+  .param-group-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; }
+
+  .param-row { display: grid; grid-template-columns: 52px 1fr 64px; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .param-label { font-size: 11px; color: var(--text-dim); font-family: var(--mono); font-weight: 500; }
+
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: #2a2a38; border-radius: 2px; outline: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); }
+
+  .param-value {
+    font-family: var(--mono); font-size: 11px; color: var(--text);
+    text-align: right; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 4px 6px; width: 64px;
+  }
+  .param-value:focus { outline: none; border-color: var(--accent); }
+
+  /* ── Main ── */
+  .main { padding: 28px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+  .preview-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }
+
+  /* ── Monitor ── */
+  .monitor {
+    position: relative; width: 100%; aspect-ratio: 16/9;
+    background: #0d0d12; border: 2px solid var(--border); border-radius: 6px; overflow: hidden;
+  }
+  .monitor-grid {
+    position: absolute; inset: 0;
+    background: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 10% 10%; pointer-events: none; z-index: 1;
+  }
+  .monitor-center-h { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.04); z-index: 1; pointer-events: none; }
+  .monitor-center-v { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.04); z-index: 1; pointer-events: none; }
+  .dsk-outline { position: absolute; inset: 0; border: 2px dashed var(--green); opacity: 0.4; z-index: 20; pointer-events: none; border-radius: 3px; }
+  .dsk-badge { position: absolute; top: 6px; right: 6px; font-family: var(--mono); font-size: 9px; color: var(--green); background: var(--green-dim); border: 1px solid rgba(52,211,153,0.2); padding: 2px 6px; border-radius: 3px; z-index: 21; pointer-events: none; }
+
+  .pinp-rect {
+    position: absolute; border: 2px solid; z-index: 5;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s ease-out;
+  }
+  .pinp-rect-label { font-family: var(--mono); font-size: 12px; font-weight: 500; text-align: center; pointer-events: none; opacity: 0.9; }
+  .pinp-rect-label small { display: block; font-size: 9px; opacity: 0.6; margin-top: 2px; }
+
+  .pinp-rect[data-pinp="1"] { border-color: #4a90d9; background: rgba(74,144,217,0.07); }
+  .pinp-rect[data-pinp="1"] .pinp-rect-label { color: #4a90d9; }
+  .pinp-rect[data-pinp="2"] { border-color: #d94a6e; background: rgba(217,74,110,0.07); }
+  .pinp-rect[data-pinp="2"] .pinp-rect-label { color: #d94a6e; }
+  .pinp-rect[data-pinp="3"] { border-color: #e6a030; background: rgba(230,160,48,0.07); }
+  .pinp-rect[data-pinp="3"] .pinp-rect-label { color: #e6a030; }
+  .pinp-rect[data-pinp="4"] { border-color: #9b59b6; background: rgba(155,89,182,0.07); }
+  .pinp-rect[data-pinp="4"] .pinp-rect-label { color: #9b59b6; }
+
+  /* ── Output ── */
+  .output-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .output-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; }
+  .output-card h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
+
+  .coord-table { width: 100%; border-collapse: collapse; }
+  .coord-table th { font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--text-muted); text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  .coord-table td { font-family: var(--mono); font-size: 11px; padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-dim); }
+  .coord-table tr:last-child td { border-bottom: none; }
+  .coord-table .pinp-name { color: var(--text); font-weight: 500; }
+
+  .dsk-info { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+  .dsk-info strong { color: var(--text); font-weight: 600; }
+  .dsk-info code { font-family: var(--mono); font-size: 11px; background: var(--surface2); padding: 1px 5px; border-radius: 3px; color: var(--green); }
+
+  /* ── Presets ── */
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; }
+  .preset-btn {
+    font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 7px 14px;
+    border: 1px solid var(--border); border-radius: 5px; background: var(--surface);
+    color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+  }
+  .preset-btn:hover { border-color: var(--border-hover); color: var(--text); background: var(--surface2); }
+  .preset-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  /* ── Export ── */
+  .export-bar { display: flex; gap: 8px; align-items: center; }
+  .export-btn {
+    font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 8px 16px;
+    border: 1px solid var(--border); border-radius: 5px; background: var(--surface);
+    color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+  }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .export-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .export-btn.primary:hover { opacity: 0.9; }
+  .toast { font-size: 11px; color: var(--green); opacity: 0; transition: opacity 0.3s; }
+  .toast.show { opacity: 1; }
+
+  /* ═══ Reverse mode specific ═══ */
+  .reverse-sidebar-intro {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim); line-height: 1.6;
+  }
+  .reverse-sidebar-intro strong { color: var(--text); }
+
+  .rev-pinp-section { border-bottom: 1px solid var(--border); padding: 16px 20px; }
+  .rev-pinp-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  }
+  .rev-pinp-header h3 {
+    font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .rev-pinp-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .rev-input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .rev-input-group { display: flex; flex-direction: column; gap: 3px; }
+  .rev-input-label { font-family: var(--mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .rev-input {
+    font-family: var(--mono); font-size: 12px; color: var(--text);
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 6px 8px; width: 100%; text-align: center;
+  }
+  .rev-input:focus { outline: none; border-color: var(--accent); }
+  .rev-input::placeholder { color: var(--text-muted); }
+
+  .rev-result {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 5px;
+    padding: 10px 12px; margin-top: 8px;
+  }
+  .rev-result-title { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .rev-result-row { display: flex; justify-content: space-between; padding: 3px 0; }
+  .rev-result-key { font-size: 11px; color: var(--text-dim); }
+  .rev-result-val { font-family: var(--mono); font-size: 11px; color: var(--text); font-weight: 500; }
+  .rev-result-note { font-size: 10px; color: var(--orange); margin-top: 6px; line-height: 1.5; }
+
+  .rev-add-btn {
+    width: 100%; padding: 10px; margin-top: 4px;
+    font-family: var(--sans); font-size: 12px; font-weight: 500;
+    border: 1px dashed var(--border); border-radius: 5px;
+    background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+  }
+  .rev-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .rev-remove-btn {
+    margin-left: auto; padding: 2px 8px;
+    font-family: var(--mono); font-size: 10px;
+    border: 1px solid var(--border); border-radius: 3px;
+    background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+  }
+  .rev-remove-btn:hover { border-color: #d94a6e; color: #d94a6e; }
+
+  /* Draw overlay */
+  .draw-overlay {
+    position: absolute; inset: 0; z-index: 30; cursor: crosshair;
+  }
+  .draw-rect {
+    position: absolute; border: 2px dashed; pointer-events: none; z-index: 31;
+  }
+  .draw-hint {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 10px; color: var(--text-muted);
+    background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 4px;
+    z-index: 32; pointer-events: none; white-space: nowrap;
+  }
+
+  /* Mode container */
+  .mode-content { display: none; }
+  .mode-content.active { display: contents; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <h1>V-160HD PinP レイアウトビルダー</h1>
+    <div class="pipe"></div>
+    <span class="subtitle">DSKオーバーレイデザイン用</span>
+    <span class="badge">1920 × 1080</span>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="forward"><span class="mode-icon">▶</span>パラメータ → プレビュー</button>
+    <button class="mode-tab" data-mode="reverse"><span class="mode-icon">◀</span>ピクセル → パラメータ逆算</button>
+  </div>
+
+  <!-- ═══ FORWARD MODE ═══ -->
+  <div class="mode-content active" id="mode-forward">
+    <div class="sidebar" id="sidebar-forward"></div>
+    <div class="main">
+      <div>
+        <div class="preview-label">プリセット</div>
+        <div class="presets" id="presets"></div>
+      </div>
+      <div>
+        <div class="preview-label">プレビュー</div>
+        <div class="monitor" id="monitor-forward">
+          <div class="monitor-grid"></div>
+          <div class="monitor-center-h"></div>
+          <div class="monitor-center-v"></div>
+          <div class="dsk-outline"></div>
+          <div class="dsk-badge">DSK</div>
+        </div>
+      </div>
+      <div class="output-section">
+        <div class="output-card">
+          <h4>ピクセル座標</h4>
+          <table class="coord-table" id="coordTable"><thead><tr><th>PinP</th><th>X</th><th>Y</th><th>W</th><th>H</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="output-card">
+          <h4>DSK設計情報</h4>
+          <div class="dsk-info" id="dskInfo"></div>
+        </div>
+      </div>
+      <div class="export-bar">
+        <button class="export-btn primary" id="copyJson">JSON コピー</button>
+        <button class="export-btn" id="copyText">テキスト コピー</button>
+        <span class="toast" id="toast">コピーしました</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ REVERSE MODE ═══ -->
+  <div class="mode-content" id="mode-reverse">
+    <div class="sidebar" id="sidebar-reverse"></div>
+    <div class="main">
+      <div>
+        <div class="preview-label">プレビュー — モニター上をドラッグして矩形を描画</div>
+        <div class="monitor" id="monitor-reverse">
+          <div class="monitor-grid"></div>
+          <div class="monitor-center-h"></div>
+          <div class="monitor-center-v"></div>
+          <div class="dsk-outline"></div>
+          <div class="dsk-badge">DSK</div>
+          <div class="draw-overlay" id="drawOverlay"></div>
+        </div>
+      </div>
+      <div class="output-section">
+        <div class="output-card" style="grid-column:1/-1;">
+          <h4>逆算結果サマリー</h4>
+          <div class="dsk-info" id="revSummary">矩形を追加してください</div>
+        </div>
+      </div>
+      <div class="export-bar">
+        <button class="export-btn primary" id="copyRevText">V-160HD設定値コピー</button>
+        <span class="toast" id="toast2">コピーしました</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const W = 1920, H = 1080;
+const COLORS = { 1: '#4a90d9', 2: '#d94a6e', 3: '#e6a030', 4: '#9b59b6' };
+const COLOR_ARR = ['#4a90d9', '#d94a6e', '#e6a030', '#9b59b6'];
+
+// ═════════════════════════════════════
+// FORWARD MODE (existing)
+// ═════════════════════════════════════
+const fState = {
+  pinps: {
+    1: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    2: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    3: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    4: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+  },
+  activePreset: null
+};
+
+const PRESETS = [
+  { name: 'レイアウト 1', desc: '左メイン＋右クロップ', config: {
+    1: { enabled: true, cropH: 100, cropV: 100, posH: -50, posV: 0, zoom: 71.2, imgH: 0, imgV: 0, imgZoom: 100 },
+    2: { enabled: true, cropH: 40.4, cropV: 100, posH: 50, posV: 0, zoom: 71.2, imgH: 0, imgV: 0, imgZoom: 100 },
+    3: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    4: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+  }},
+  { name: 'レイアウト 2', desc: '3カラム', config: {
+    1: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 56.1, imgH: 0, imgV: 0, imgZoom: 100 },
+    2: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    3: { enabled: true, cropH: 29.2, cropV: 100, posH: -50, posV: 0, zoom: 75, imgH: 0, imgV: 0, imgZoom: 100 },
+    4: { enabled: true, cropH: 29.2, cropV: 100, posH: 50, posV: 0, zoom: 75, imgH: 0, imgV: 0, imgZoom: 100 },
+  }},
+  { name: 'レイアウト 3', desc: '左右均等分割', config: {
+    1: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    2: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    3: { enabled: true, cropH: 50, cropV: 100, posH: -50, posV: 0, zoom: 100, imgH: 0, imgV: 0, imgZoom: 100 },
+    4: { enabled: true, cropH: 50, cropV: 100, posH: 50, posV: 0, zoom: 100, imgH: 0, imgV: 0, imgZoom: 100 },
+  }}
+];
+
+const PARAMS = [
+  { group: 'クロッピング', items: [
+    { key: 'cropH', label: 'H', min: 1, max: 100, step: 0.1, unit: '%' },
+    { key: 'cropV', label: 'V', min: 1, max: 100, step: 0.1, unit: '%' },
+  ]},
+  { group: '小画面', items: [
+    { key: 'posH', label: 'H', min: -50, max: 50, step: 0.1, unit: '%' },
+    { key: 'posV', label: 'V', min: -50, max: 50, step: 0.1, unit: '%' },
+    { key: 'zoom', label: 'Zoom', min: 1, max: 100, step: 0.1, unit: '%' },
+  ]},
+];
+
+function calcRect(p) {
+  const zf = p.zoom / 100;
+  const visW = W * zf * (p.cropH / 100);
+  const visH = H * zf * (p.cropV / 100);
+  const x = (W - visW) * ((p.posH + 50) / 100);
+  const y = (H - visH) * ((p.posV + 50) / 100);
+  return { x: Math.round(x), y: Math.round(y), w: Math.round(visW), h: Math.round(visH) };
+}
+
+// ── Reverse: pixel → params (with user-adjustable zoom) ──
+
+// ── Forward sidebar ──
+function buildForwardSidebar() {
+  const sb = document.getElementById('sidebar-forward');
+  sb.innerHTML = '';
+  for (let i = 1; i <= 4; i++) {
+    const p = fState.pinps[i];
+    const color = COLORS[i];
+    const section = document.createElement('div');
+    section.className = 'sidebar-section';
+    const header = document.createElement('div');
+    header.className = 'sidebar-section-header';
+    header.innerHTML = `<h3><span class="dot" style="background:${color}"></span>PinP ${i}</h3>`;
+    const toggle = document.createElement('button');
+    toggle.className = 'pinp-toggle' + (p.enabled ? ' active' : '');
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      p.enabled = !p.enabled;
+      toggle.classList.toggle('active', p.enabled);
+      bd.style.display = p.enabled ? 'block' : 'none';
+      fState.activePreset = null;
+      updatePresetButtons();
+      renderForward();
+    });
+    header.appendChild(toggle);
+    const bd = document.createElement('div');
+    bd.className = 'sidebar-section-body';
+    bd.style.display = p.enabled ? 'block' : 'none';
+    for (const group of PARAMS) {
+      const g = document.createElement('div');
+      g.className = 'param-group';
+      g.innerHTML = `<div class="param-group-title">${group.group}</div>`;
+      for (const item of group.items) {
+        const row = document.createElement('div');
+        row.className = 'param-row';
+        const slider = document.createElement('input');
+        slider.type = 'range'; slider.min = item.min; slider.max = item.max; slider.step = item.step; slider.value = p[item.key];
+        const valInput = document.createElement('input');
+        valInput.type = 'text'; valInput.className = 'param-value'; valInput.value = p[item.key].toFixed(1) + item.unit;
+        slider.addEventListener('input', () => {
+          p[item.key] = parseFloat(slider.value);
+          valInput.value = p[item.key].toFixed(1) + item.unit;
+          fState.activePreset = null; updatePresetButtons(); renderForward();
+        });
+        valInput.addEventListener('focus', () => { valInput.value = p[item.key].toFixed(1); valInput.select(); });
+        valInput.addEventListener('blur', () => {
+          let v = parseFloat(valInput.value); if (isNaN(v)) v = p[item.key];
+          v = Math.max(item.min, Math.min(item.max, v));
+          p[item.key] = v; slider.value = v; valInput.value = v.toFixed(1) + item.unit;
+          fState.activePreset = null; updatePresetButtons(); renderForward();
+        });
+        valInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') valInput.blur(); });
+        row.innerHTML = `<span class="param-label">${item.label}</span>`;
+        row.appendChild(slider); row.appendChild(valInput); g.appendChild(row);
+      }
+      bd.appendChild(g);
+    }
+    header.addEventListener('click', () => { if (!p.enabled) return; bd.style.display = bd.style.display === 'none' ? 'block' : 'none'; });
+    section.appendChild(header); section.appendChild(bd); sb.appendChild(section);
+  }
+}
+
+function buildPresets() {
+  const c = document.getElementById('presets'); c.innerHTML = '';
+  PRESETS.forEach((pr, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn'; btn.textContent = pr.name; btn.title = pr.desc; btn.dataset.idx = idx;
+    btn.addEventListener('click', () => applyPreset(idx));
+    c.appendChild(btn);
+  });
+}
+function applyPreset(idx) {
+  const pr = PRESETS[idx];
+  for (let i = 1; i <= 4; i++) Object.assign(fState.pinps[i], JSON.parse(JSON.stringify(pr.config[i])));
+  fState.activePreset = idx; buildForwardSidebar(); updatePresetButtons(); renderForward();
+}
+function updatePresetButtons() {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.idx) === fState.activePreset));
+}
+
+function renderForward() {
+  const mon = document.getElementById('monitor-forward');
+  mon.querySelectorAll('.pinp-rect').forEach(el => el.remove());
+  const rects = [];
+  for (let i = 1; i <= 4; i++) {
+    const p = fState.pinps[i]; if (!p.enabled) continue;
+    const r = calcRect(p); rects.push({ id: i, ...r });
+    const el = document.createElement('div');
+    el.className = 'pinp-rect'; el.dataset.pinp = i;
+    el.style.left = (r.x/W*100)+'%'; el.style.top = (r.y/H*100)+'%';
+    el.style.width = (r.w/W*100)+'%'; el.style.height = (r.h/H*100)+'%'; el.style.zIndex = 4+i;
+    el.innerHTML = `<div class="pinp-rect-label">PinP ${i}<small>${r.w}×${r.h}</small></div>`;
+    mon.appendChild(el);
+  }
+  // Coord table
+  const tbody = document.querySelector('#coordTable tbody'); tbody.innerHTML = '';
+  for (const r of rects) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="pinp-name" style="color:${COLORS[r.id]}">PinP ${r.id}</td><td>${r.x}</td><td>${r.y}</td><td>${r.w}</td><td>${r.h}</td>`;
+    tbody.appendChild(tr);
+  }
+  // DSK info
+  const dskInfo = document.getElementById('dskInfo');
+  if (!rects.length) { dskInfo.innerHTML = 'PinP未設定。DSKは画面全体を使えます。'; return; }
+  let minY=H,maxY=0,minX=W,maxX=0;
+  for (const r of rects) { minY=Math.min(minY,r.y); maxY=Math.max(maxY,r.y+r.h); minX=Math.min(minX,r.x); maxX=Math.max(maxX,r.x+r.w); }
+  let html = '<strong>映像と干渉しない領域：</strong><br>';
+  if (minY>0) html+=`上部 <code>${minY}px</code><br>`;
+  if (H-maxY>0) html+=`下部 <code>${H-maxY}px</code><br>`;
+  if (minX>0) html+=`左側 <code>${minX}px</code><br>`;
+  if (W-maxX>0) html+=`右側 <code>${W-maxX}px</code><br>`;
+  if (minY<=0&&H-maxY<=0&&minX<=0&&W-maxX<=0) html+='余白なし<br>';
+  const overlaps = [];
+  for (let a=0;a<rects.length;a++) for (let b=a+1;b<rects.length;b++) {
+    const ra=rects[a],rb=rects[b];
+    const ox1=Math.max(ra.x,rb.x),oy1=Math.max(ra.y,rb.y),ox2=Math.min(ra.x+ra.w,rb.x+rb.w),oy2=Math.min(ra.y+ra.h,rb.y+rb.h);
+    if (ox1<ox2&&oy1<oy2) overlaps.push({a:ra.id,b:rb.id,x:ox1,y:oy1,w:ox2-ox1,h:oy2-oy1});
+  }
+  if (overlaps.length) {
+    html+='<br><strong style="color:#d94a6e;">⚠ 重なり検出：</strong><br>';
+    for (const o of overlaps) {
+      const area=o.w*o.h, pct=(area/(W*H)*100).toFixed(1);
+      html+=`PinP ${o.a} × PinP ${o.b}：<code>${o.w}×${o.h}px</code>（${area.toLocaleString()}px² / ${pct}%）<br>`;
+      html+=`<span style="font-size:11px;color:#888;">位置 X=${o.x} Y=${o.y}〜X=${o.x+o.w} Y=${o.y+o.h}</span><br>`;
+    }
+  }
+  dskInfo.innerHTML = html;
+}
+
+// ═════════════════════════════════════
+// REVERSE MODE
+// ═════════════════════════════════════
+// Each rect now stores: { id, x, y, w, h, color, zoom }
+// zoom is user-adjustable; cropH, cropV, posH, posV are derived from zoom + pixel rect.
+const rState = { rects: [] };
+let nextRevId = 1;
+
+// Reverse calc with a given zoom (%).
+// Returns null if the requested rect can't be achieved with this zoom.
+function reverseCalcWithZoom(rect, zoomPct) {
+  const { x, y, w, h } = rect;
+  const zf = zoomPct / 100;
+  const fullW = W * zf;
+  const fullH = H * zf;
+  if (fullW < 1 || fullH < 1) return null;
+
+  const cropH = w / fullW * 100;
+  const cropV = h / fullH * 100;
+  if (cropH > 100.05 || cropV > 100.05) return null; // can't exceed 100% crop
+
+  const availX = W - w;
+  const availY = H - h;
+  const posH = availX > 0 ? (x / availX * 100 - 50) : 0;
+  const posV = availY > 0 ? (y / availY * 100 - 50) : 0;
+
+  const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
+  return {
+    zoom: parseFloat(zoomPct.toFixed(1)),
+    cropH: clamp(parseFloat(cropH.toFixed(1)), 0.1, 100),
+    cropV: clamp(parseFloat(cropV.toFixed(1)), 0.1, 100),
+    posH: clamp(parseFloat(posH.toFixed(1)), -50, 50),
+    posV: clamp(parseFloat(posV.toFixed(1)), -50, 50),
+  };
+}
+
+// Compute the valid zoom range for a given rect.
+// Min zoom: both cropH and cropV would be 100% → zoom = max(w/W, h/H)
+// Max zoom: 100%
+function getZoomRange(rect) {
+  const minZoom = Math.max(rect.w / W, rect.h / H) * 100;
+  return { min: Math.max(1, parseFloat(minZoom.toFixed(1))), max: 100 };
+}
+
+// Default zoom for a rect: use min zoom (= largest crop values, most natural)
+function defaultZoom(rect) {
+  return getZoomRange(rect).min;
+}
+
+function buildReverseSidebar() {
+  const sb = document.getElementById('sidebar-reverse');
+  sb.innerHTML = '';
+
+  const intro = document.createElement('div');
+  intro.className = 'reverse-sidebar-intro';
+  intro.innerHTML = `<strong>逆算モード</strong><br>ピクセル座標を指定 → Zoomを自由に調整 → CropH/V・位置が連動<br><span style="color:var(--text-muted);font-size:11px;">モニター上ドラッグでも矩形追加可</span>`;
+  sb.appendChild(intro);
+
+  for (const rect of rState.rects) {
+    const section = document.createElement('div');
+    section.className = 'rev-pinp-section';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'rev-pinp-header';
+    header.innerHTML = `<h3><span class="dot" style="background:${rect.color}"></span>矩形 ${rect.id}</h3>`;
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'rev-remove-btn';
+    removeBtn.textContent = '✕ 削除';
+    removeBtn.addEventListener('click', () => {
+      rState.rects = rState.rects.filter(r => r.id !== rect.id);
+      buildReverseSidebar(); renderReverse();
+    });
+    header.appendChild(removeBtn);
+    section.appendChild(header);
+
+    // Pixel inputs: X, Y, W, H
+    const pxTitle = document.createElement('div');
+    pxTitle.className = 'param-group-title';
+    pxTitle.textContent = 'ピクセル指定';
+    section.appendChild(pxTitle);
+
+    const grid = document.createElement('div');
+    grid.className = 'rev-input-grid';
+    const fields = [
+      { key: 'x', label: 'X' },
+      { key: 'y', label: 'Y' },
+      { key: 'w', label: 'W' },
+      { key: 'h', label: 'H' },
+    ];
+    const pixelInputs = {};
+    for (const f of fields) {
+      const g = document.createElement('div');
+      g.className = 'rev-input-group';
+      g.innerHTML = `<span class="rev-input-label">${f.label}</span>`;
+      const input = document.createElement('input');
+      input.type = 'number'; input.className = 'rev-input';
+      input.value = rect[f.key];
+      pixelInputs[f.key] = input;
+      input.addEventListener('input', () => {
+        let v = parseInt(input.value);
+        if (isNaN(v)) v = 0;
+        rect[f.key] = v;
+        // Recompute zoom range and clamp
+        const range = getZoomRange(rect);
+        if (rect.zoom < range.min) rect.zoom = range.min;
+        if (rect.zoom > range.max) rect.zoom = range.max;
+        rebuildZoomControl();
+        updateRevResult(section, rect);
+        renderReverse();
+      });
+      g.appendChild(input);
+      grid.appendChild(g);
+    }
+    section.appendChild(grid);
+
+    // Zoom control: slider + input
+    const zoomGroup = document.createElement('div');
+    zoomGroup.className = 'param-group';
+    zoomGroup.style.marginTop = '12px';
+
+    const zoomTitle = document.createElement('div');
+    zoomTitle.className = 'param-group-title';
+    zoomTitle.textContent = 'Zoom（自由調整）';
+    zoomGroup.appendChild(zoomTitle);
+
+    const zoomRow = document.createElement('div');
+    zoomRow.className = 'param-row';
+
+    const zoomLabel = document.createElement('span');
+    zoomLabel.className = 'param-label';
+    zoomLabel.textContent = 'Zoom';
+
+    const zoomSlider = document.createElement('input');
+    zoomSlider.type = 'range';
+    zoomSlider.step = '0.1';
+
+    const zoomInput = document.createElement('input');
+    zoomInput.type = 'text';
+    zoomInput.className = 'param-value';
+
+    function rebuildZoomControl() {
+      const range = getZoomRange(rect);
+      zoomSlider.min = range.min;
+      zoomSlider.max = range.max;
+      zoomSlider.value = rect.zoom;
+      zoomInput.value = rect.zoom.toFixed(1) + '%';
+      // Update range hint
+      if (rangeHint) rangeHint.textContent = `範囲: ${range.min}% 〜 ${range.max}%`;
+    }
+
+    zoomSlider.addEventListener('input', () => {
+      rect.zoom = parseFloat(zoomSlider.value);
+      zoomInput.value = rect.zoom.toFixed(1) + '%';
+      updateRevResult(section, rect);
+      renderReverse();
+    });
+
+    zoomInput.addEventListener('focus', () => {
+      zoomInput.value = rect.zoom.toFixed(1);
+      zoomInput.select();
+    });
+    zoomInput.addEventListener('blur', () => {
+      let v = parseFloat(zoomInput.value);
+      const range = getZoomRange(rect);
+      if (isNaN(v)) v = rect.zoom;
+      v = Math.max(range.min, Math.min(range.max, v));
+      rect.zoom = v;
+      zoomSlider.value = v;
+      zoomInput.value = v.toFixed(1) + '%';
+      updateRevResult(section, rect);
+      renderReverse();
+    });
+    zoomInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') zoomInput.blur(); });
+
+    zoomRow.appendChild(zoomLabel);
+    zoomRow.appendChild(zoomSlider);
+    zoomRow.appendChild(zoomInput);
+    zoomGroup.appendChild(zoomRow);
+
+    // Range hint
+    const rangeHint = document.createElement('div');
+    rangeHint.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:4px;';
+    zoomGroup.appendChild(rangeHint);
+
+    section.appendChild(zoomGroup);
+
+    // Initialize zoom control
+    rebuildZoomControl();
+
+    // Result panel
+    const result = document.createElement('div');
+    result.className = 'rev-result';
+    section.appendChild(result);
+    updateRevResult(section, rect);
+
+    sb.appendChild(section);
+  }
+
+  // Add button
+  const addWrap = document.createElement('div');
+  addWrap.style.padding = '12px 20px';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'rev-add-btn';
+  addBtn.textContent = '＋ 矩形を追加';
+  addBtn.addEventListener('click', () => { addRevRect(W/4, H/4, W/2, H/2); });
+  addWrap.appendChild(addBtn);
+  sb.appendChild(addWrap);
+}
+
+function updateRevResult(section, rect) {
+  const result = section.querySelector('.rev-result');
+  if (rect.w <= 0 || rect.h <= 0) {
+    result.innerHTML = '<span style="color:var(--text-muted);font-size:11px;">有効なサイズを入力してください</span>';
+    return;
+  }
+  const p = reverseCalcWithZoom(rect, rect.zoom);
+  if (!p) {
+    result.innerHTML = '<span style="color:#d94a6e;font-size:11px;">このZoom値ではCropが100%を超えます。Zoomを上げてください。</span>';
+    return;
+  }
+
+  // Verify
+  const verify = calcRect({ cropH: p.cropH, cropV: p.cropV, posH: p.posH, posV: p.posV, zoom: p.zoom });
+  const hasError = Math.abs(verify.w - rect.w) > 1 || Math.abs(verify.h - rect.h) > 1 ||
+                   Math.abs(verify.x - rect.x) > 1 || Math.abs(verify.y - rect.y) > 1;
+
+  let html = `<div class="rev-result-title">V-160HD パラメータ</div>`;
+  html += `<div class="rev-result-row"><span class="rev-result-key">クロッピング H</span><span class="rev-result-val">${p.cropH}%</span></div>`;
+  html += `<div class="rev-result-row"><span class="rev-result-key">クロッピング V</span><span class="rev-result-val">${p.cropV}%</span></div>`;
+  html += `<div class="rev-result-row"><span class="rev-result-key">小画面 H</span><span class="rev-result-val">${p.posH}%</span></div>`;
+  html += `<div class="rev-result-row"><span class="rev-result-key">小画面 V</span><span class="rev-result-val">${p.posV}%</span></div>`;
+  html += `<div class="rev-result-row"><span class="rev-result-key">小画面 Zoom</span><span class="rev-result-val">${p.zoom}%</span></div>`;
+  if (hasError) {
+    html += `<div class="rev-result-note">⚠ 丸め誤差（実際: ${verify.w}×${verify.h} @ ${verify.x},${verify.y}）</div>`;
+  }
+  result.innerHTML = html;
+}
+
+function addRevRect(x, y, w, h) {
+  const id = nextRevId++;
+  const color = COLOR_ARR[(id - 1) % COLOR_ARR.length];
+  const r = { id, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), color, zoom: 0 };
+  r.zoom = defaultZoom(r);
+  rState.rects.push(r);
+  buildReverseSidebar();
+  renderReverse();
+}
+
+function renderReverse() {
+  const mon = document.getElementById('monitor-reverse');
+  mon.querySelectorAll('.pinp-rect').forEach(el => el.remove());
+  for (const rect of rState.rects) {
+    if (rect.w <= 0 || rect.h <= 0) continue;
+    const el = document.createElement('div');
+    el.className = 'pinp-rect';
+    el.style.borderColor = rect.color;
+    el.style.background = rect.color.replace(')', ',0.07)').replace('rgb', 'rgba');
+    el.style.left = (rect.x/W*100)+'%'; el.style.top = (rect.y/H*100)+'%';
+    el.style.width = (rect.w/W*100)+'%'; el.style.height = (rect.h/H*100)+'%';
+    el.style.zIndex = 5 + rect.id;
+    el.innerHTML = `<div class="pinp-rect-label" style="color:${rect.color}">矩形 ${rect.id}<small>${rect.w}×${rect.h}</small></div>`;
+    mon.appendChild(el);
+  }
+  updateRevSummary();
+}
+
+function updateRevSummary() {
+  const el = document.getElementById('revSummary');
+  if (!rState.rects.length) { el.innerHTML = '矩形を追加してください'; return; }
+  let html = '';
+  for (const rect of rState.rects) {
+    if (rect.w <= 0 || rect.h <= 0) continue;
+    const p = reverseCalcWithZoom(rect, rect.zoom);
+    if (!p) { html += `<strong style="color:${rect.color}">矩形 ${rect.id}</strong> — Zoom値を確認してください<br>`; continue; }
+    html += `<strong style="color:${rect.color}">矩形 ${rect.id}</strong>（${rect.x}, ${rect.y}, ${rect.w}×${rect.h}）<br>`;
+    html += `&nbsp;&nbsp;Crop H:<code>${p.cropH}%</code> V:<code>${p.cropV}%</code> `;
+    html += `Pos H:<code>${p.posH}%</code> V:<code>${p.posV}%</code> `;
+    html += `Zoom:<code>${p.zoom}%</code><br>`;
+  }
+  el.innerHTML = html;
+}
+
+// ── Draw on monitor ──
+const drawOverlay = document.getElementById('drawOverlay');
+let drawing = false, drawStart = null, drawEl = null;
+
+drawOverlay.addEventListener('mousedown', (e) => {
+  const monRect = drawOverlay.getBoundingClientRect();
+  drawing = true;
+  drawStart = {
+    xPx: e.clientX - monRect.left,
+    yPx: e.clientY - monRect.top,
+    monW: monRect.width,
+    monH: monRect.height
+  };
+  drawEl = document.createElement('div');
+  drawEl.className = 'draw-rect';
+  const color = COLOR_ARR[(nextRevId - 1) % COLOR_ARR.length];
+  drawEl.style.borderColor = color;
+  drawEl.style.background = color.replace(')', ',0.1)').replace('rgb', 'rgba');
+  drawOverlay.appendChild(drawEl);
+});
+
+drawOverlay.addEventListener('mousemove', (e) => {
+  if (!drawing || !drawEl) return;
+  const monRect = drawOverlay.getBoundingClientRect();
+  const cx = e.clientX - monRect.left;
+  const cy = e.clientY - monRect.top;
+  const x1 = Math.min(drawStart.xPx, cx);
+  const y1 = Math.min(drawStart.yPx, cy);
+  const x2 = Math.max(drawStart.xPx, cx);
+  const y2 = Math.max(drawStart.yPx, cy);
+  drawEl.style.left = (x1/drawStart.monW*100)+'%';
+  drawEl.style.top = (y1/drawStart.monH*100)+'%';
+  drawEl.style.width = ((x2-x1)/drawStart.monW*100)+'%';
+  drawEl.style.height = ((y2-y1)/drawStart.monH*100)+'%';
+});
+
+drawOverlay.addEventListener('mouseup', (e) => {
+  if (!drawing) return;
+  drawing = false;
+  if (drawEl) { drawEl.remove(); drawEl = null; }
+  const monRect = drawOverlay.getBoundingClientRect();
+  const cx = e.clientX - monRect.left;
+  const cy = e.clientY - monRect.top;
+  const x1 = Math.min(drawStart.xPx, cx) / drawStart.monW * W;
+  const y1 = Math.min(drawStart.yPx, cy) / drawStart.monH * H;
+  const x2 = Math.max(drawStart.xPx, cx) / drawStart.monW * W;
+  const y2 = Math.max(drawStart.yPx, cy) / drawStart.monH * H;
+  const rw = x2 - x1, rh = y2 - y1;
+  if (rw > 20 && rh > 20) {
+    addRevRect(x1, y1, rw, rh);
+  }
+  drawStart = null;
+});
+
+drawOverlay.addEventListener('mouseleave', () => {
+  if (drawing && drawEl) { drawEl.remove(); drawEl = null; }
+  drawing = false;
+});
+
+// ── Mode switching ──
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('mode-' + tab.dataset.mode).classList.add('active');
+  });
+});
+
+// ── Export reverse ──
+document.getElementById('copyRevText').addEventListener('click', () => {
+  let text = `V-160HD PinP 逆算結果 (1920×1080)\n${'─'.repeat(40)}\n`;
+  for (const rect of rState.rects) {
+    if (rect.w <= 0 || rect.h <= 0) continue;
+    const p = reverseCalcWithZoom(rect, rect.zoom);
+    if (!p) continue;
+    text += `\n矩形 ${rect.id} (X=${rect.x} Y=${rect.y} W=${rect.w} H=${rect.h})\n`;
+    text += `  クロッピング: H(${p.cropH}%) V(${p.cropV}%)\n`;
+    text += `  小画面: H(${p.posH}%) V(${p.posV}%) Zoom(${p.zoom}%)\n`;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const t = document.getElementById('toast2');
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500);
+  });
+});
+
+// Forward export
+document.getElementById('copyJson').addEventListener('click', () => {
+  const data = { resolution: '1920x1080', pinps: [] };
+  for (let i=1;i<=4;i++) { const p=fState.pinps[i]; if(!p.enabled)continue; const r=calcRect(p);
+    data.pinps.push({id:i,params:{cropH:p.cropH,cropV:p.cropV,posH:p.posH,posV:p.posV,zoom:p.zoom},pixel:r});
+  }
+  navigator.clipboard.writeText(JSON.stringify(data,null,2)).then(()=>{
+    const t=document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500);
+  });
+});
+document.getElementById('copyText').addEventListener('click', () => {
+  let text = `V-160HD PinP レイアウト (1920×1080)\n${'─'.repeat(40)}\n`;
+  for (let i=1;i<=4;i++) { const p=fState.pinps[i]; if(!p.enabled)continue; const r=calcRect(p);
+    text += `\nPinP ${i}\n  クロッピング: H(${p.cropH}%) V(${p.cropV}%)\n  小画面: H(${p.posH}%) V(${p.posV}%) Zoom(${p.zoom}%)\n  ピクセル: X=${r.x} Y=${r.y} W=${r.w} H=${r.h}\n`;
+  }
+  navigator.clipboard.writeText(text).then(()=>{
+    const t=document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500);
+  });
+});
+
+// ── Init ──
+buildPresets();
+applyPreset(0);
+buildReverseSidebar();
+renderReverse();
+</script>
+</body>
+</html>
