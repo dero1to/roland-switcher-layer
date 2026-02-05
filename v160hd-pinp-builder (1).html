@@ -153,6 +153,26 @@
   .dsk-info strong { color: var(--text); font-weight: 600; }
   .dsk-info code { font-family: var(--mono); font-size: 11px; background: var(--surface2); padding: 1px 5px; border-radius: 3px; color: var(--green); }
 
+  /* ── Image selector ── */
+  .image-selector { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .image-selector-label { font-size: 11px; color: var(--text-muted); margin-right: 4px; }
+  .image-btn {
+    width: 48px; height: 27px; border-radius: 4px; overflow: hidden;
+    border: 2px solid var(--border); cursor: pointer; transition: all 0.15s;
+    background-size: cover; background-position: center;
+  }
+  .image-btn:hover { border-color: var(--border-hover); }
+  .image-btn.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .image-btn.grid-pattern {
+    background: linear-gradient(45deg, #2a2a38 25%, transparent 25%),
+                linear-gradient(-45deg, #2a2a38 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #2a2a38 75%),
+                linear-gradient(-45deg, transparent 75%, #2a2a38 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    background-color: #1a1a24;
+  }
+
   /* ── Presets ── */
   .presets { display: flex; gap: 8px; flex-wrap: wrap; }
   .preset-btn {
@@ -214,6 +234,53 @@
   .rev-result-key { font-size: 11px; color: var(--text-dim); }
   .rev-result-val { font-family: var(--mono); font-size: 11px; color: var(--text); font-weight: 500; }
   .rev-result-note { font-size: 10px; color: var(--orange); margin-top: 6px; line-height: 1.5; }
+
+  /* Crop preview */
+  .crop-preview-wrap {
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+  }
+  .crop-preview-title { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .crop-preview {
+    position: relative; width: 100%; aspect-ratio: 16/9;
+    background: #1a1a24; border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .crop-preview-full {
+    position: absolute; inset: 0;
+    display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+    background-size: cover; background-position: center;
+  }
+  .crop-preview-full.has-image .grid-cell {
+    background: transparent !important;
+    border-color: rgba(255,255,255,0.2);
+  }
+  .crop-preview-full .grid-cell {
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .crop-preview-full .grid-cell:nth-child(1) { background: rgba(231,76,60,0.3); }
+  .crop-preview-full .grid-cell:nth-child(2) { background: rgba(241,196,15,0.3); }
+  .crop-preview-full .grid-cell:nth-child(3) { background: rgba(46,204,113,0.3); }
+  .crop-preview-full .grid-cell:nth-child(4) { background: rgba(155,89,182,0.3); }
+  .crop-preview-full .grid-cell:nth-child(5) { background: rgba(52,152,219,0.4); }
+  .crop-preview-full .grid-cell:nth-child(6) { background: rgba(230,126,34,0.3); }
+  .crop-preview-full .grid-cell:nth-child(7) { background: rgba(26,188,156,0.3); }
+  .crop-preview-full .grid-cell:nth-child(8) { background: rgba(142,68,173,0.3); }
+  .crop-preview-full .grid-cell:nth-child(9) { background: rgba(241,196,15,0.3); }
+  .crop-preview-area {
+    position: absolute; border: 2px solid var(--accent);
+    box-shadow: 0 0 0 2000px rgba(0,0,0,0.6);
+  }
+  .crop-preview-label {
+    position: absolute; bottom: 4px; right: 4px;
+    font-family: var(--mono); font-size: 9px; color: var(--text-muted);
+    background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 2px; z-index: 5;
+  }
+  .crop-preview-size {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-family: var(--mono); font-size: 10px; color: #fff; font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8); z-index: 5;
+  }
 
   .rev-add-btn {
     width: 100%; padding: 10px; margin-top: 4px;
@@ -335,15 +402,23 @@ const W = 1920, H = 1080;
 const COLORS = { 1: '#4a90d9', 2: '#d94a6e', 3: '#e6a030', 4: '#9b59b6' };
 const COLOR_ARR = ['#4a90d9', '#d94a6e', '#e6a030', '#9b59b6'];
 
+// Sample images
+const SAMPLE_IMAGES = [
+  { id: 'grid', name: 'グリッド', path: null },
+  { id: 'person', name: '人物', path: 'images/person.jpg' },
+  { id: 'slide', name: 'スライド', path: 'images/slide.jpg' },
+  { id: 'room', name: '部屋', path: 'images/room.jpg' },
+];
+
 // ═════════════════════════════════════
 // FORWARD MODE (existing)
 // ═════════════════════════════════════
 const fState = {
   pinps: {
-    1: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
-    2: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
-    3: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
-    4: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100 },
+    1: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100, imageId: 'person' },
+    2: { enabled: true, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100, imageId: 'slide' },
+    3: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100, imageId: 'room' },
+    4: { enabled: false, cropH: 100, cropV: 100, posH: 0, posV: 0, zoom: 50, imgH: 0, imgV: 0, imgZoom: 100, imageId: 'grid' },
   },
   activePreset: null
 };
@@ -377,7 +452,12 @@ const PARAMS = [
   { group: '小画面', items: [
     { key: 'posH', label: 'H', min: -50, max: 50, step: 0.1, unit: '%' },
     { key: 'posV', label: 'V', min: -50, max: 50, step: 0.1, unit: '%' },
-    { key: 'zoom', label: 'Zoom', min: 1, max: 100, step: 0.1, unit: '%' },
+    { key: 'zoom', label: 'Zoom', min: 0, max: 100, step: 0.1, unit: '%' },
+  ]},
+  { group: '子画面映像', items: [
+    { key: 'imgH', label: 'H', min: -50, max: 50, step: 0.1, unit: '%' },
+    { key: 'imgV', label: 'V', min: -50, max: 50, step: 0.1, unit: '%' },
+    { key: 'imgZoom', label: 'Zoom', min: 100, max: 400, step: 1, unit: '%' },
   ]},
 ];
 
@@ -448,9 +528,91 @@ function buildForwardSidebar() {
       }
       bd.appendChild(g);
     }
+
+    // Image selector for this PinP
+    const imgGroup = document.createElement('div');
+    imgGroup.className = 'param-group';
+    imgGroup.innerHTML = `<div class="param-group-title">入力ソース</div>`;
+    const imgSelector = document.createElement('div');
+    imgSelector.className = 'image-selector';
+    SAMPLE_IMAGES.forEach(img => {
+      const btn = document.createElement('button');
+      btn.className = 'image-btn' + (p.imageId === img.id ? ' active' : '');
+      btn.title = img.name;
+      btn.dataset.imgId = img.id;
+      if (img.path) {
+        btn.style.backgroundImage = `url(${img.path})`;
+      } else {
+        btn.classList.add('grid-pattern');
+      }
+      btn.addEventListener('click', () => {
+        p.imageId = img.id;
+        imgSelector.querySelectorAll('.image-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateForwardCropPreview(cropPreview, p);
+        renderForward();
+      });
+      imgSelector.appendChild(btn);
+    });
+    imgGroup.appendChild(imgSelector);
+    bd.appendChild(imgGroup);
+
+    // Crop preview for forward mode
+    const cropPreview = document.createElement('div');
+    cropPreview.className = 'crop-preview-wrap';
+    cropPreview.dataset.pinp = i;
+    bd.appendChild(cropPreview);
+    updateForwardCropPreview(cropPreview, p);
+
     header.addEventListener('click', () => { if (!p.enabled) return; bd.style.display = bd.style.display === 'none' ? 'block' : 'none'; });
     section.appendChild(header); section.appendChild(bd); sb.appendChild(section);
   }
+}
+
+const GRID_LABELS = ['左上', '上', '右上', '左', '中央', '右', '左下', '下', '右下'];
+
+function updateForwardCropPreview(el, p) {
+  // クロップ領域（子画面映像Zoom適用前）
+  const cropW = Math.round(W * p.cropH / 100);
+  const cropH_px = Math.round(H * p.cropV / 100);
+
+  // 子画面映像Zoom適用後の実際に見える領域
+  const imgZf = p.imgZoom / 100;
+  const visibleW = p.cropH / imgZf;
+  const visibleH = p.cropV / imgZf;
+  const visibleWpx = Math.round(W * visibleW / 100);
+  const visibleHpx = Math.round(H * visibleH / 100);
+
+  // 子画面映像の位置オフセット（imgH, imgV）
+  const offsetX = (100 - visibleW) * ((p.imgH + 50) / 100);
+  const offsetY = (100 - visibleH) * ((p.imgV + 50) / 100);
+
+  const imgData = SAMPLE_IMAGES.find(img => img.id === p.imageId) || SAMPLE_IMAGES[0];
+  const imagePath = imgData.path;
+  const gridCells = GRID_LABELS.map(l => `<div class="grid-cell">${l}</div>`).join('');
+  const imageStyle = imagePath ? `background-image:url(${imagePath});` : '';
+  const imageClass = imagePath ? ' has-image' : '';
+
+  let html = `<div class="crop-preview-title">入力映像の使用領域</div>
+    <div class="crop-preview">
+      <div class="crop-preview-full${imageClass}" style="${imageStyle}">${gridCells}</div>`;
+
+  // クロップ領域（薄い枠で表示）- imgZoom適用前の範囲
+  if (p.imgZoom > 100) {
+    html += `<div style="position:absolute;left:${(100-p.cropH)/2}%;top:${(100-p.cropV)/2}%;width:${p.cropH}%;height:${p.cropV}%;border:2px dashed rgba(255,255,255,0.4);z-index:3;pointer-events:none;"></div>`;
+  }
+
+  // 実際に見える領域（imgZoom適用後）
+  html += `<div class="crop-preview-area" style="left:${offsetX}%;top:${offsetY}%;width:${visibleW}%;height:${visibleH}%"></div>`;
+  html += `<div class="crop-preview-size">${visibleWpx}×${visibleHpx}px</div>`;
+  html += `<div class="crop-preview-label">1920×1080</div>
+    </div>`;
+
+  if (p.imgZoom > 100) {
+    html += `<div style="font-size:10px;color:var(--text-muted);margin-top:4px;">点線=クロップ枠 / 実線=映像Zoom ${p.imgZoom}%後</div>`;
+  }
+
+  el.innerHTML = html;
 }
 
 function buildPresets() {
@@ -462,9 +624,14 @@ function buildPresets() {
     c.appendChild(btn);
   });
 }
+
 function applyPreset(idx) {
   const pr = PRESETS[idx];
-  for (let i = 1; i <= 4; i++) Object.assign(fState.pinps[i], JSON.parse(JSON.stringify(pr.config[i])));
+  for (let i = 1; i <= 4; i++) {
+    const currentImageId = fState.pinps[i].imageId; // 画像設定を保持
+    Object.assign(fState.pinps[i], JSON.parse(JSON.stringify(pr.config[i])));
+    fState.pinps[i].imageId = currentImageId; // 画像設定を復元
+  }
   fState.activePreset = idx; buildForwardSidebar(); updatePresetButtons(); renderForward();
 }
 function updatePresetButtons() {
@@ -518,6 +685,12 @@ function renderForward() {
     }
   }
   dskInfo.innerHTML = html;
+
+  // Update crop previews in sidebar
+  document.querySelectorAll('#sidebar-forward .crop-preview-wrap').forEach(el => {
+    const pinpId = parseInt(el.dataset.pinp);
+    updateForwardCropPreview(el, fState.pinps[pinpId]);
+  });
 }
 
 // ═════════════════════════════════════
@@ -561,7 +734,7 @@ function reverseCalcWithZoom(rect, zoomPct) {
 // Max zoom: 100%
 function getZoomRange(rect) {
   const minZoom = Math.max(rect.w / W, rect.h / H) * 100;
-  return { min: Math.max(1, parseFloat(minZoom.toFixed(1))), max: 100 };
+  return { min: Math.max(0, parseFloat(minZoom.toFixed(1))), max: 100 };
 }
 
 // Default zoom for a rect: use min zoom (= largest crop values, most natural)
@@ -623,10 +796,6 @@ function buildReverseSidebar() {
         let v = parseInt(input.value);
         if (isNaN(v)) v = 0;
         rect[f.key] = v;
-        // Recompute zoom range and clamp
-        const range = getZoomRange(rect);
-        if (rect.zoom < range.min) rect.zoom = range.min;
-        if (rect.zoom > range.max) rect.zoom = range.max;
         rebuildZoomControl();
         updateRevResult(section, rect);
         renderReverse();
@@ -635,6 +804,34 @@ function buildReverseSidebar() {
       grid.appendChild(g);
     }
     section.appendChild(grid);
+
+    // Image selector for this rect
+    const imgGroup = document.createElement('div');
+    imgGroup.className = 'param-group';
+    imgGroup.style.marginTop = '12px';
+    imgGroup.innerHTML = `<div class="param-group-title">入力ソース</div>`;
+    const imgSelector = document.createElement('div');
+    imgSelector.className = 'image-selector';
+    SAMPLE_IMAGES.forEach(img => {
+      const btn = document.createElement('button');
+      btn.className = 'image-btn' + (rect.imageId === img.id ? ' active' : '');
+      btn.title = img.name;
+      if (img.path) {
+        btn.style.backgroundImage = `url(${img.path})`;
+      } else {
+        btn.classList.add('grid-pattern');
+      }
+      btn.addEventListener('click', () => {
+        rect.imageId = img.id;
+        imgSelector.querySelectorAll('.image-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateRevResult(section, rect);
+        renderReverse();
+      });
+      imgSelector.appendChild(btn);
+    });
+    imgGroup.appendChild(imgSelector);
+    section.appendChild(imgGroup);
 
     // Zoom control: slider + input
     const zoomGroup = document.createElement('div');
@@ -662,13 +859,13 @@ function buildReverseSidebar() {
     zoomInput.className = 'param-value';
 
     function rebuildZoomControl() {
-      const range = getZoomRange(rect);
-      zoomSlider.min = range.min;
-      zoomSlider.max = range.max;
+      zoomSlider.min = 0;
+      zoomSlider.max = 100;
       zoomSlider.value = rect.zoom;
       zoomInput.value = rect.zoom.toFixed(1) + '%';
       // Update range hint
-      if (rangeHint) rangeHint.textContent = `範囲: ${range.min}% 〜 ${range.max}%`;
+      const range = getZoomRange(rect);
+      if (rangeHint) rangeHint.textContent = `有効範囲: ${range.min}% 〜 ${range.max}%`;
     }
 
     zoomSlider.addEventListener('input', () => {
@@ -684,9 +881,8 @@ function buildReverseSidebar() {
     });
     zoomInput.addEventListener('blur', () => {
       let v = parseFloat(zoomInput.value);
-      const range = getZoomRange(rect);
       if (isNaN(v)) v = rect.zoom;
-      v = Math.max(range.min, Math.min(range.max, v));
+      v = Math.max(0, Math.min(100, v));
       rect.zoom = v;
       zoomSlider.value = v;
       zoomInput.value = v.toFixed(1) + '%';
@@ -756,13 +952,33 @@ function updateRevResult(section, rect) {
   if (hasError) {
     html += `<div class="rev-result-note">⚠ 丸め誤差（実際: ${verify.w}×${verify.h} @ ${verify.x},${verify.y}）</div>`;
   }
+
+  // Crop preview - 入力映像のどの領域が使われるか表示
+  const cropW = Math.round(W * p.cropH / 100);
+  const cropH_px = Math.round(H * p.cropV / 100);
+  const imgData = SAMPLE_IMAGES.find(img => img.id === rect.imageId) || SAMPLE_IMAGES[0];
+  const imagePath = imgData.path;
+  const gridCells = GRID_LABELS.map(l => `<div class="grid-cell">${l}</div>`).join('');
+  const imageStyle = imagePath ? `background-image:url(${imagePath});` : '';
+  const imageClass = imagePath ? ' has-image' : '';
+  html += `<div class="crop-preview-wrap">`;
+  html += `<div class="crop-preview-title">入力映像のクロップ領域</div>`;
+  html += `<div class="crop-preview">`;
+  html += `<div class="crop-preview-full${imageClass}" style="${imageStyle}">${gridCells}</div>`;
+  html += `<div class="crop-preview-area" style="left:${p.cropH < 100 ? (100-p.cropH)/2 : 0}%;top:${p.cropV < 100 ? (100-p.cropV)/2 : 0}%;width:${p.cropH}%;height:${p.cropV}%"></div>`;
+  html += `<div class="crop-preview-size">${cropW}×${cropH_px}px</div>`;
+  html += `<div class="crop-preview-label">1920×1080</div>`;
+  html += `</div>`;
+  html += `</div>`;
+
   result.innerHTML = html;
 }
 
 function addRevRect(x, y, w, h) {
   const id = nextRevId++;
   const color = COLOR_ARR[(id - 1) % COLOR_ARR.length];
-  const r = { id, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), color, zoom: 0 };
+  const imageId = SAMPLE_IMAGES[(id - 1) % SAMPLE_IMAGES.length].id;
+  const r = { id, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), color, zoom: 0, imageId };
   r.zoom = defaultZoom(r);
   rState.rects.push(r);
   buildReverseSidebar();
