@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { Mode, PinPParams } from './types';
 import { PRESETS } from './utils/constants';
 import { ForwardMode } from './components/ForwardMode';
@@ -17,6 +17,21 @@ function getInitialPinps(): Record<number, PinPParams> {
 export default function App() {
   const [mode, setMode] = useState<Mode>('forward');
   const [pinps, setPinps] = useState<Record<number, PinPParams>>(getInitialPinps);
+  const [dskImage, setDskImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDskFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setDskImage(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }, []);
+
+  const clearDskImage = useCallback(() => {
+    setDskImage(null);
+  }, []);
 
   return (
     <div className="app">
@@ -24,6 +39,26 @@ export default function App() {
         <h1>V-160HD PinP レイアウトビルダー</h1>
         <div className="pipe" />
         <span className="subtitle">DSKオーバーレイデザイン用</span>
+        <div className="dsk-upload-area">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleDskFileChange}
+            hidden
+          />
+          <button
+            className="dsk-upload-btn"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {dskImage ? 'DSK画像を変更' : 'DSK画像を読み込む'}
+          </button>
+          {dskImage && (
+            <button className="dsk-clear-btn" onClick={clearDskImage}>
+              ✕
+            </button>
+          )}
+        </div>
         <span className="badge">1920 × 1080</span>
       </div>
 
@@ -43,9 +78,9 @@ export default function App() {
       </div>
 
       {mode === 'forward' ? (
-        <ForwardMode pinps={pinps} setPinps={setPinps} />
+        <ForwardMode pinps={pinps} setPinps={setPinps} dskImage={dskImage} />
       ) : (
-        <ReverseMode />
+        <ReverseMode dskImage={dskImage} />
       )}
     </div>
   );

@@ -8,9 +8,10 @@ import { Monitor } from './Monitor';
 interface ForwardModeProps {
   pinps: Record<number, PinPParams>;
   setPinps: React.Dispatch<React.SetStateAction<Record<number, PinPParams>>>;
+  dskImage: string | null;
 }
 
-export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
+export function ForwardMode({ pinps, setPinps, dskImage }: ForwardModeProps) {
   const [activePreset, setActivePreset] = useState<number | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -118,7 +119,7 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
         </div>
         <div>
           <div className="preview-label">プレビュー</div>
-          <Monitor rects={enabledRects.map(r => ({ id: r.id, rect: r }))} />
+          <Monitor rects={enabledRects.map(r => ({ id: r.id, rect: r }))} dskImage={dskImage} />
         </div>
         <div className="output-section">
           <div className="output-card">

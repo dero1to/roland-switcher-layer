@@ -6,7 +6,11 @@ import { ReverseSidebar } from './ReverseSidebar';
 import { Monitor } from './Monitor';
 import { DrawOverlay } from './DrawOverlay';
 
-export function ReverseMode() {
+interface ReverseModeProps {
+  dskImage: string | null;
+}
+
+export function ReverseMode({ dskImage }: ReverseModeProps) {
   const [rects, setRects] = useState<ReverseRect[]>([]);
   const nextIdRef = useRef(1);
   const [toastVisible, setToastVisible] = useState(false);
@@ -100,7 +104,7 @@ export function ReverseMode() {
       <div className="main">
         <div>
           <div className="preview-label">プレビュー — モニター上をドラッグして矩形を描画</div>
-          <Monitor rects={monitorRects}>
+          <Monitor rects={monitorRects} dskImage={dskImage}>
             <DrawOverlay nextId={nextIdRef.current} onDrawComplete={addRect} />
           </Monitor>
         </div>

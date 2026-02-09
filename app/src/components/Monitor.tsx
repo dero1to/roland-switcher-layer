@@ -10,17 +10,16 @@ interface MonitorRectItem {
 
 interface MonitorProps {
   rects: MonitorRectItem[];
+  dskImage?: string | null;
   children?: React.ReactNode;
 }
 
-export function Monitor({ rects, children }: MonitorProps) {
+export function Monitor({ rects, dskImage, children }: MonitorProps) {
   return (
     <div className="monitor">
       <div className="monitor-grid" />
       <div className="monitor-center-h" />
       <div className="monitor-center-v" />
-      <div className="dsk-outline" />
-      <div className="dsk-badge">DSK</div>
       {rects.map((item) => {
         const r = item.rect;
         return (
@@ -47,6 +46,18 @@ export function Monitor({ rects, children }: MonitorProps) {
           </div>
         );
       })}
+      {dskImage ? (
+        <img
+          src={dskImage}
+          alt="DSK overlay"
+          className="dsk-image-overlay"
+        />
+      ) : (
+        <>
+          <div className="dsk-outline" />
+          <div className="dsk-badge">DSK</div>
+        </>
+      )}
       {children}
     </div>
   );
