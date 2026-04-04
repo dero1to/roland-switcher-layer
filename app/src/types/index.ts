@@ -18,21 +18,6 @@ export interface PixelRect {
   h: number;
 }
 
-export interface ReverseRect extends PixelRect {
-  id: number;
-  color: string;
-  zoom: number;
-  imageId: string;
-}
-
-export interface ReverseParams {
-  zoom: number;
-  cropH: number;
-  cropV: number;
-  posH: number;
-  posV: number;
-}
-
 export interface PresetConfig {
   name: string;
   desc: string;
@@ -58,5 +43,3 @@ export interface SampleImage {
   name: string;
   path: string | null;
 }
-
-export type Mode = 'forward' | 'reverse';
