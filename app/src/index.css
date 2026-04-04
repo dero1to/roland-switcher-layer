@@ -493,6 +493,50 @@ input[type="range"]::-webkit-slider-thumb {
 .preset-btn:hover { border-color: var(--border-hover); color: var(--text); background: var(--surface2); }
 .preset-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
+/* ── Save Slots ── */
+.save-slots { display: flex; gap: 8px; flex-wrap: wrap; }
+.save-slot { display: flex; gap: 2px; }
+.slot-load {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 5px 0 0 5px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.slot-load:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.slot-overwrite, .slot-delete {
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-left: none;
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.slot-overwrite { border-radius: 0; }
+.slot-delete { border-radius: 0 5px 5px 0; }
+.slot-overwrite:hover { color: var(--accent); background: var(--surface2); }
+.slot-delete:hover { color: #d94a6e; background: var(--surface2); }
+.slot-empty {
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 7px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.slot-empty:hover { border-color: var(--accent); color: var(--text-dim); background: var(--surface); }
+
 /* ── Export ── */
 .export-bar { display: flex; gap: 8px; align-items: center; }
 .export-btn {

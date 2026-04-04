@@ -1,9 +1,28 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { PinPParams, PixelRect } from '../types';
 import { PRESETS, COLORS, W, H } from '../utils/constants';
 import { calcRect, detectOverlaps, buildForwardExportJson, buildForwardExportText } from '../utils/calc';
 import { ForwardSidebar } from './ForwardSidebar';
 import { Monitor } from './Monitor';
+
+const STORAGE_KEY = 'v160hd-saved-slots';
+
+interface SavedSlot {
+  name: string;
+  pinps: Record<number, PinPParams>;
+}
+
+function loadSlots(): (SavedSlot | null)[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return [null, null, null];
+}
+
+function saveSlots(slots: (SavedSlot | null)[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(slots));
+}
 
 interface ForwardModeProps {
   pinps: Record<number, PinPParams>;
@@ -14,6 +33,33 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
   const [activePreset, setActivePreset] = useState<number | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [slots, setSlots] = useState<(SavedSlot | null)[]>(loadSlots);
+  useEffect(() => { saveSlots(slots); }, [slots]);
+
+  const handleSaveSlot = useCallback((idx: number) => {
+    const name = prompt('保存名を入力', slots[idx]?.name || `保存${idx + 1}`);
+    if (name === null) return;
+    setSlots(prev => {
+      const next = [...prev];
+      next[idx] = { name: name || `保存${idx + 1}`, pinps: JSON.parse(JSON.stringify(pinps)) };
+      return next;
+    });
+  }, [pinps, slots]);
+
+  const handleLoadSlot = useCallback((idx: number) => {
+    const slot = slots[idx];
+    if (!slot) return;
+    setPinps(slot.pinps);
+    setActivePreset(null);
+  }, [slots, setPinps]);
+
+  const handleDeleteSlot = useCallback((idx: number) => {
+    setSlots(prev => {
+      const next = [...prev];
+      next[idx] = null;
+      return next;
+    });
+  }, []);
 
   const handleUpdate = useCallback((id: number, updates: Partial<PinPParams>) => {
     setPinps(prev => ({
@@ -187,6 +233,28 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
               >
                 {pr.name}
               </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="preview-label">保存スロット</div>
+          <div className="save-slots">
+            {slots.map((slot, idx) => (
+              <div key={idx} className="save-slot">
+                {slot ? (
+                  <>
+                    <button className="slot-load" onClick={() => handleLoadSlot(idx)} title="読み込む">
+                      {slot.name}
+                    </button>
+                    <button className="slot-overwrite" onClick={() => handleSaveSlot(idx)} title="上書き保存">↻</button>
+                    <button className="slot-delete" onClick={() => handleDeleteSlot(idx)} title="削除">×</button>
+                  </>
+                ) : (
+                  <button className="slot-empty" onClick={() => handleSaveSlot(idx)}>
+                    スロット {idx + 1}（空）
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         </div>
