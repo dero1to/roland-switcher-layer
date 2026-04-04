@@ -23,6 +23,30 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
     setActivePreset(null);
   }, [setPinps]);
 
+  const handleRectDrag = useCallback((id: number, dx: number, dy: number) => {
+    setPinps(prev => {
+      const p = prev[id];
+      if (!p || !p.enabled) return prev;
+      const zf = p.zoom / 100;
+      const visW = W * zf * (p.cropH / 100);
+      const visH = H * zf * (p.cropV / 100);
+      const availX = W - visW;
+      const availY = H - visH;
+      const dPosH = availX > 0 ? (dx / availX) * 100 : 0;
+      const dPosV = availY > 0 ? (dy / availY) * 100 : 0;
+      const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+      return {
+        ...prev,
+        [id]: {
+          ...p,
+          posH: clamp(parseFloat((p.posH + dPosH).toFixed(1)), -50, 50),
+          posV: clamp(parseFloat((p.posV + dPosV).toFixed(1)), -50, 50),
+        },
+      };
+    });
+    setActivePreset(null);
+  }, [setPinps]);
+
   const handleToggle = useCallback((id: number) => {
     setPinps(prev => ({
       ...prev,
@@ -118,7 +142,7 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
         </div>
         <div>
           <div className="preview-label">プレビュー</div>
-          <Monitor rects={enabledRects.map(r => ({ id: r.id, rect: r }))} />
+          <Monitor rects={enabledRects.map(r => ({ id: r.id, rect: r }))} onRectDrag={handleRectDrag} />
         </div>
         <div className="output-section">
           <div className="output-card">

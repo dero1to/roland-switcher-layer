@@ -1,3 +1,4 @@
+import { useRef, useCallback, useEffect } from 'react';
 import type { PixelRect } from '../types';
 import { W, H } from '../utils/constants';
 
@@ -10,12 +11,47 @@ interface MonitorRectItem {
 
 interface MonitorProps {
   rects: MonitorRectItem[];
+  onRectDrag?: (id: number, dx: number, dy: number) => void;
   children?: React.ReactNode;
 }
 
-export function Monitor({ rects, children }: MonitorProps) {
+export function Monitor({ rects, onRectDrag, children }: MonitorProps) {
+  const monitorRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ id: number; startX: number; startY: number } | null>(null);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent, id: number) => {
+    if (!onRectDrag) return;
+    e.preventDefault();
+    dragRef.current = { id, startX: e.clientX, startY: e.clientY };
+  }, [onRectDrag]);
+
+  useEffect(() => {
+    if (!onRectDrag) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragRef.current || !monitorRef.current) return;
+      const monRect = monitorRef.current.getBoundingClientRect();
+      const dx = ((e.clientX - dragRef.current.startX) / monRect.width) * W;
+      const dy = ((e.clientY - dragRef.current.startY) / monRect.height) * H;
+      dragRef.current.startX = e.clientX;
+      dragRef.current.startY = e.clientY;
+      onRectDrag(dragRef.current.id, dx, dy);
+    };
+
+    const handleMouseUp = () => {
+      dragRef.current = null;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [onRectDrag]);
+
   return (
-    <div className="monitor">
+    <div className="monitor" ref={monitorRef}>
       <div className="monitor-grid" />
       <div className="monitor-center-h" />
       <div className="monitor-center-v" />
@@ -26,8 +62,9 @@ export function Monitor({ rects, children }: MonitorProps) {
         return (
           <div
             key={item.id}
-            className="pinp-rect"
+            className={`pinp-rect${onRectDrag ? ' draggable' : ''}`}
             data-pinp={item.id}
+            onMouseDown={onRectDrag ? (e) => handleMouseDown(e, item.id) : undefined}
             style={{
               left: `${(r.x / W) * 100}%`,
               top: `${(r.y / H) * 100}%`,

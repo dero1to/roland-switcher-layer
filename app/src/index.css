@@ -309,6 +309,13 @@ input[type="range"]::-webkit-slider-thumb {
   justify-content: center;
   transition: all 0.15s ease-out;
 }
+.pinp-rect.draggable {
+  cursor: grab;
+}
+.pinp-rect.draggable:active {
+  cursor: grabbing;
+  transition: none;
+}
 .pinp-rect-label {
   font-family: var(--mono);
   font-size: 12px;
