@@ -32,6 +32,7 @@ interface ForwardModeProps {
 export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
   const [activePreset, setActivePreset] = useState<number | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [slots, setSlots] = useState<(SavedSlot | null)[]>(loadSlots);
   useEffect(() => { saveSlots(slots); }, [slots]);
@@ -221,49 +222,62 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
     }
   }
 
+  const presetsContent = (
+    <div className="toolbar-group">
+      {PRESETS.map((pr, idx) => (
+        <button
+          key={idx}
+          className={`preset-btn${activePreset === idx ? ' active' : ''}`}
+          title={pr.desc}
+          onClick={() => applyPreset(idx)}
+        >
+          {pr.name}
+        </button>
+      ))}
+    </div>
+  );
+
+  const slotsContent = (
+    <div className="toolbar-group">
+      {slots.map((slot, idx) => (
+        <div key={idx} className="save-slot">
+          {slot ? (
+            <>
+              <button className="slot-load" onClick={() => handleLoadSlot(idx)} title="読み込む">
+                {slot.name}
+              </button>
+              <button className="slot-overwrite" onClick={() => handleSaveSlot(idx)} title="上書き保存">↻</button>
+              <button className="slot-delete" onClick={() => handleDeleteSlot(idx)} title="削除">×</button>
+            </>
+          ) : (
+            <button className="slot-empty" onClick={() => handleSaveSlot(idx)}>
+              {idx + 1}
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const exportContent = (
+    <div className="toolbar-group">
+      <button className="export-btn primary" onClick={copyShareUrl}>共有URL</button>
+      <button className="export-btn" onClick={copyJson}>JSON</button>
+      <button className="export-btn" onClick={copyText}>テキスト</button>
+      <span className={`toast${toastVisible ? ' show' : ''}`}>コピーしました</span>
+    </div>
+  );
+
   return (
     <>
-      <ForwardSidebar pinps={pinps} onUpdate={handleUpdate} onToggle={handleToggle} />
       <div className="main">
-        <div>
-          <div className="preview-label">プリセット</div>
-          <div className="presets">
-            {PRESETS.map((pr, idx) => (
-              <button
-                key={idx}
-                className={`preset-btn${activePreset === idx ? ' active' : ''}`}
-                title={pr.desc}
-                onClick={() => applyPreset(idx)}
-              >
-                {pr.name}
-              </button>
-            ))}
-          </div>
+        {/* Desktop: toolbar */}
+        <div className="toolbar">
+          {presetsContent}
+          <div className="toolbar-sep" />
+          {slotsContent}
         </div>
-        <div>
-          <div className="preview-label">保存スロット</div>
-          <div className="save-slots">
-            {slots.map((slot, idx) => (
-              <div key={idx} className="save-slot">
-                {slot ? (
-                  <>
-                    <button className="slot-load" onClick={() => handleLoadSlot(idx)} title="読み込む">
-                      {slot.name}
-                    </button>
-                    <button className="slot-overwrite" onClick={() => handleSaveSlot(idx)} title="上書き保存">↻</button>
-                    <button className="slot-delete" onClick={() => handleDeleteSlot(idx)} title="削除">×</button>
-                  </>
-                ) : (
-                  <button className="slot-empty" onClick={() => handleSaveSlot(idx)}>
-                    スロット {idx + 1}（空）
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="preview-label">プレビュー</div>
+        <div className="monitor-wrap">
           <Monitor
             rects={enabledRects.map(r => ({ id: r.id, rect: r }))}
             onRectDrag={handleRectDrag}
@@ -273,7 +287,8 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
             onCropVDrag={handleCropVDrag}
           />
         </div>
-        <div className="output-section">
+        {/* Desktop: bottom bar */}
+        <div className="bottom-bar">
           <div className="output-card">
             <h4>ピクセル座標</h4>
             <table className="coord-table">
@@ -297,14 +312,56 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
             <h4>DSK設計情報</h4>
             <div className="dsk-info" dangerouslySetInnerHTML={{ __html: dskHtml }} />
           </div>
+          <div className="output-card export-card">
+            <h4>エクスポート</h4>
+            {exportContent}
+          </div>
         </div>
-        <div className="export-bar">
-          <button className="export-btn primary" onClick={copyShareUrl}>共有URLコピー</button>
-          <button className="export-btn" onClick={copyJson}>JSON コピー</button>
-          <button className="export-btn" onClick={copyText}>テキスト コピー</button>
-          <span className={`toast${toastVisible ? ' show' : ''}`}>コピーしました</span>
+        {/* Mobile: single collapsible panel */}
+        <div className={`mobile-tools${mobileToolsOpen ? ' open' : ''}`}>
+          <button className="mobile-tools-toggle" onClick={() => setMobileToolsOpen(v => !v)}>
+            ツール {mobileToolsOpen ? '▾' : '▸'}
+          </button>
+          <div className="mobile-tools-body">
+            <div className="mobile-tools-section">
+              <div className="mobile-tools-label">プリセット</div>
+              {presetsContent}
+            </div>
+            <div className="mobile-tools-section">
+              <div className="mobile-tools-label">保存スロット</div>
+              {slotsContent}
+            </div>
+            <div className="mobile-tools-section">
+              <div className="mobile-tools-label">ピクセル座標</div>
+              <table className="coord-table">
+                <thead>
+                  <tr><th>PinP</th><th>X</th><th>Y</th><th>W</th><th>H</th></tr>
+                </thead>
+                <tbody>
+                  {enabledRects.map(r => (
+                    <tr key={r.id}>
+                      <td className="pinp-name" style={{ color: COLORS[r.id] }}>PinP {r.id}</td>
+                      <td>{r.x}</td>
+                      <td>{r.y}</td>
+                      <td>{r.w}</td>
+                      <td>{r.h}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mobile-tools-section">
+              <div className="mobile-tools-label">DSK設計情報</div>
+              <div className="dsk-info" dangerouslySetInnerHTML={{ __html: dskHtml }} />
+            </div>
+            <div className="mobile-tools-section">
+              <div className="mobile-tools-label">エクスポート</div>
+              {exportContent}
+            </div>
+          </div>
         </div>
       </div>
+      <ForwardSidebar pinps={pinps} onUpdate={handleUpdate} onToggle={handleToggle} />
     </>
   );
 }
