@@ -316,10 +316,8 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: grabbing;
   transition: none;
 }
-.pinp-zoom-handle {
+.pinp-handle {
   position: absolute;
-  bottom: -4px;
-  right: -4px;
   width: 20px;
   height: 20px;
   display: flex;
@@ -328,18 +326,26 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 50%;
-  cursor: nesw-resize;
+  cursor: ns-resize;
   color: var(--text-dim);
   opacity: 0;
   transition: opacity 0.15s;
   z-index: 10;
 }
-.pinp-rect:hover .pinp-zoom-handle {
+.pinp-rect:hover .pinp-handle {
   opacity: 1;
 }
-.pinp-zoom-handle:hover {
+.pinp-handle:hover {
   background: var(--surface);
   color: var(--text);
+}
+.pinp-handle-zoom {
+  bottom: -4px;
+  right: -4px;
+}
+.pinp-handle-img-zoom {
+  bottom: -4px;
+  left: -4px;
 }
 .pinp-rect-label {
   font-family: var(--mono);

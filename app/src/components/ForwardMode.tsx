@@ -47,23 +47,24 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
     setActivePreset(null);
   }, [setPinps]);
 
-  const handleZoomDrag = useCallback((id: number, dx: number, dy: number) => {
+  const handleZoomDrag = useCallback((id: number, dy: number) => {
     setPinps(prev => {
       const p = prev[id];
       if (!p || !p.enabled) return prev;
-      const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-      // 上下: 小画面 Zoom (上でズームアップ)
       const dZoom = -dy * 0.05;
-      // 左右: 子画面映像 imgZoom (右でズームアップ)
-      const dImgZoom = dx * 0.15;
-      return {
-        ...prev,
-        [id]: {
-          ...p,
-          zoom: clamp(parseFloat((p.zoom + dZoom).toFixed(1)), 0, 100),
-          imgZoom: clamp(parseFloat((p.imgZoom + dImgZoom).toFixed(1)), 100, 400),
-        },
-      };
+      const zoom = Math.max(0, Math.min(100, parseFloat((p.zoom + dZoom).toFixed(1))));
+      return { ...prev, [id]: { ...p, zoom } };
+    });
+    setActivePreset(null);
+  }, [setPinps]);
+
+  const handleImgZoomDrag = useCallback((id: number, dy: number) => {
+    setPinps(prev => {
+      const p = prev[id];
+      if (!p || !p.enabled) return prev;
+      const dImgZoom = -dy * 0.15;
+      const imgZoom = Math.max(100, Math.min(400, parseFloat((p.imgZoom + dImgZoom).toFixed(1))));
+      return { ...prev, [id]: { ...p, imgZoom } };
     });
     setActivePreset(null);
   }, [setPinps]);
@@ -163,7 +164,7 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
         </div>
         <div>
           <div className="preview-label">プレビュー</div>
-          <Monitor rects={enabledRects.map(r => ({ id: r.id, rect: r }))} onRectDrag={handleRectDrag} onZoomDrag={handleZoomDrag} />
+          <Monitor rects={enabledRects.map(r => ({ id: r.id, rect: r }))} onRectDrag={handleRectDrag} onZoomDrag={handleZoomDrag} onImgZoomDrag={handleImgZoomDrag} />
         </div>
         <div className="output-section">
           <div className="output-card">

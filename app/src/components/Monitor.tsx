@@ -12,13 +12,14 @@ interface MonitorRectItem {
 interface MonitorProps {
   rects: MonitorRectItem[];
   onRectDrag?: (id: number, dx: number, dy: number) => void;
-  onZoomDrag?: (id: number, dx: number, dy: number) => void;
+  onZoomDrag?: (id: number, dy: number) => void;
+  onImgZoomDrag?: (id: number, dy: number) => void;
   children?: React.ReactNode;
 }
 
-type DragMode = 'move' | 'zoom';
+type DragMode = 'move' | 'zoom' | 'imgZoom';
 
-export function Monitor({ rects, onRectDrag, onZoomDrag, children }: MonitorProps) {
+export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, children }: MonitorProps) {
   const monitorRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ id: number; startX: number; startY: number; mode: DragMode } | null>(null);
 
@@ -29,7 +30,7 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, children }: MonitorProp
   }, []);
 
   useEffect(() => {
-    if (!onRectDrag && !onZoomDrag) return;
+    if (!onRectDrag && !onZoomDrag && !onImgZoomDrag) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragRef.current || !monitorRef.current) return;
@@ -42,7 +43,9 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, children }: MonitorProp
       if (d.mode === 'move' && onRectDrag) {
         onRectDrag(d.id, dx, dy);
       } else if (d.mode === 'zoom' && onZoomDrag) {
-        onZoomDrag(d.id, dx, dy);
+        onZoomDrag(d.id, dy);
+      } else if (d.mode === 'imgZoom' && onImgZoomDrag) {
+        onImgZoomDrag(d.id, dy);
       }
     };
 
@@ -56,9 +59,9 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, children }: MonitorProp
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [onRectDrag, onZoomDrag]);
+  }, [onRectDrag, onZoomDrag, onImgZoomDrag]);
 
-  const interactive = !!(onRectDrag || onZoomDrag);
+  const interactive = !!(onRectDrag || onZoomDrag || onImgZoomDrag);
 
   return (
     <div className="monitor" ref={monitorRef}>
@@ -92,15 +95,30 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, children }: MonitorProp
               <small>{r.w}&times;{r.h}</small>
             </div>
             {interactive && (
-              <div
-                className="pinp-zoom-handle"
-                onMouseDown={(e) => startDrag(e, item.id, 'zoom')}
-              >
-                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="7" cy="7" r="5" />
-                  <line x1="10.5" y1="10.5" x2="14" y2="14" />
-                </svg>
-              </div>
+              <>
+                <div
+                  className="pinp-handle pinp-handle-zoom"
+                  title="小画面 Zoom（上下ドラッグ）"
+                  onMouseDown={(e) => startDrag(e, item.id, 'zoom')}
+                >
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="7" cy="7" r="5" />
+                    <line x1="10.5" y1="10.5" x2="14" y2="14" />
+                  </svg>
+                </div>
+                <div
+                  className="pinp-handle pinp-handle-img-zoom"
+                  title="映像 Zoom（上下ドラッグ）"
+                  onMouseDown={(e) => startDrag(e, item.id, 'imgZoom')}
+                >
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="7" cy="7" r="5" />
+                    <line x1="10.5" y1="10.5" x2="14" y2="14" />
+                    <line x1="5" y1="7" x2="9" y2="7" />
+                    <line x1="7" y1="5" x2="7" y2="9" />
+                  </svg>
+                </div>
+              </>
             )}
           </div>
         );
