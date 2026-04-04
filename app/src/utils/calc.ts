@@ -57,3 +57,31 @@ export function buildForwardExportText(pinps: Record<number, PinPParams>) {
   }
   return text;
 }
+
+export function buildDskInfo(enabledRects: (PixelRect & { id: number })[], overlaps: ReturnType<typeof detectOverlaps>): string {
+  if (enabledRects.length === 0) return 'PinP未設定。DSKは画面全体を使えます。';
+
+  let minY = H, maxY = 0, minX = W, maxX = 0;
+  for (const r of enabledRects) {
+    minY = Math.min(minY, r.y);
+    maxY = Math.max(maxY, r.y + r.h);
+    minX = Math.min(minX, r.x);
+    maxX = Math.max(maxX, r.x + r.w);
+  }
+  let html = '<strong>映像と干渉しない領域：</strong><br>';
+  if (minY > 0) html += `上部 <code>${minY}px</code><br>`;
+  if (H - maxY > 0) html += `下部 <code>${H - maxY}px</code><br>`;
+  if (minX > 0) html += `左側 <code>${minX}px</code><br>`;
+  if (W - maxX > 0) html += `右側 <code>${W - maxX}px</code><br>`;
+  if (minY <= 0 && H - maxY <= 0 && minX <= 0 && W - maxX <= 0) html += '余白なし<br>';
+  if (overlaps.length) {
+    html += '<br><strong style="color:#d94a6e;">⚠ 重なり検出：</strong><br>';
+    for (const o of overlaps) {
+      const area = o.w * o.h;
+      const pct = (area / (W * H) * 100).toFixed(1);
+      html += `PinP ${o.a} × PinP ${o.b}：<code>${o.w}×${o.h}px</code>（${area.toLocaleString()}px² / ${pct}%）<br>`;
+      html += `<span style="font-size:11px;color:#888;">位置 X=${o.x} Y=${o.y}〜X=${o.x + o.w} Y=${o.y + o.h}</span><br>`;
+    }
+  }
+  return html;
+}
