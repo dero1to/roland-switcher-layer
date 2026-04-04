@@ -12,30 +12,38 @@ interface MonitorRectItem {
 interface MonitorProps {
   rects: MonitorRectItem[];
   onRectDrag?: (id: number, dx: number, dy: number) => void;
+  onZoomDrag?: (id: number, dx: number, dy: number) => void;
   children?: React.ReactNode;
 }
 
-export function Monitor({ rects, onRectDrag, children }: MonitorProps) {
-  const monitorRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ id: number; startX: number; startY: number } | null>(null);
+type DragMode = 'move' | 'zoom';
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, id: number) => {
-    if (!onRectDrag) return;
+export function Monitor({ rects, onRectDrag, onZoomDrag, children }: MonitorProps) {
+  const monitorRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ id: number; startX: number; startY: number; mode: DragMode } | null>(null);
+
+  const startDrag = useCallback((e: React.MouseEvent, id: number, mode: DragMode) => {
     e.preventDefault();
-    dragRef.current = { id, startX: e.clientX, startY: e.clientY };
-  }, [onRectDrag]);
+    e.stopPropagation();
+    dragRef.current = { id, startX: e.clientX, startY: e.clientY, mode };
+  }, []);
 
   useEffect(() => {
-    if (!onRectDrag) return;
+    if (!onRectDrag && !onZoomDrag) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragRef.current || !monitorRef.current) return;
+      const d = dragRef.current;
       const monRect = monitorRef.current.getBoundingClientRect();
-      const dx = ((e.clientX - dragRef.current.startX) / monRect.width) * W;
-      const dy = ((e.clientY - dragRef.current.startY) / monRect.height) * H;
-      dragRef.current.startX = e.clientX;
-      dragRef.current.startY = e.clientY;
-      onRectDrag(dragRef.current.id, dx, dy);
+      const dx = ((e.clientX - d.startX) / monRect.width) * W;
+      const dy = ((e.clientY - d.startY) / monRect.height) * H;
+      d.startX = e.clientX;
+      d.startY = e.clientY;
+      if (d.mode === 'move' && onRectDrag) {
+        onRectDrag(d.id, dx, dy);
+      } else if (d.mode === 'zoom' && onZoomDrag) {
+        onZoomDrag(d.id, dx, dy);
+      }
     };
 
     const handleMouseUp = () => {
@@ -48,7 +56,9 @@ export function Monitor({ rects, onRectDrag, children }: MonitorProps) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [onRectDrag]);
+  }, [onRectDrag, onZoomDrag]);
+
+  const interactive = !!(onRectDrag || onZoomDrag);
 
   return (
     <div className="monitor" ref={monitorRef}>
@@ -64,7 +74,7 @@ export function Monitor({ rects, onRectDrag, children }: MonitorProps) {
             key={item.id}
             className={`pinp-rect${onRectDrag ? ' draggable' : ''}`}
             data-pinp={item.id}
-            onMouseDown={onRectDrag ? (e) => handleMouseDown(e, item.id) : undefined}
+            onMouseDown={onRectDrag ? (e) => startDrag(e, item.id, 'move') : undefined}
             style={{
               left: `${(r.x / W) * 100}%`,
               top: `${(r.y / H) * 100}%`,
@@ -81,6 +91,17 @@ export function Monitor({ rects, onRectDrag, children }: MonitorProps) {
               {item.label || `PinP ${item.id}`}
               <small>{r.w}&times;{r.h}</small>
             </div>
+            {interactive && (
+              <div
+                className="pinp-zoom-handle"
+                onMouseDown={(e) => startDrag(e, item.id, 'zoom')}
+              >
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="7" cy="7" r="5" />
+                  <line x1="10.5" y1="10.5" x2="14" y2="14" />
+                </svg>
+              </div>
+            )}
           </div>
         );
       })}
