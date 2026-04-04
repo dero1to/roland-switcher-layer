@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react';
 import type { ParamDef } from '../types';
 
 interface ParamSliderProps {
@@ -8,21 +7,12 @@ interface ParamSliderProps {
 }
 
 export function ParamSlider({ param, value, onChange }: ParamSliderProps) {
-  const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState('');
-
-  const handleFocus = useCallback(() => {
-    setEditing(true);
-    setEditValue(value.toFixed(1));
-  }, [value]);
-
-  const handleBlur = useCallback(() => {
-    setEditing(false);
-    let v = parseFloat(editValue);
-    if (isNaN(v)) v = value;
-    v = Math.max(param.min, Math.min(param.max, v));
-    onChange(v);
-  }, [editValue, value, param.min, param.max, onChange]);
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) {
+      onChange(Math.max(param.min, Math.min(param.max, v)));
+    }
+  };
 
   return (
     <div className="param-row">
@@ -36,14 +26,15 @@ export function ParamSlider({ param, value, onChange }: ParamSliderProps) {
         onChange={(e) => onChange(parseFloat(e.target.value))}
       />
       <input
-        type="text"
+        type="number"
         className="param-value"
-        value={editing ? editValue : `${value.toFixed(1)}${param.unit}`}
-        onFocus={handleFocus}
-        onChange={(e) => setEditValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+        min={param.min}
+        max={param.max}
+        step={param.step}
+        value={parseFloat(value.toFixed(1))}
+        onChange={handleNumberChange}
       />
+      <span className="param-unit">{param.unit}</span>
     </div>
   );
 }

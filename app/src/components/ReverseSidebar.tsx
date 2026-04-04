@@ -124,21 +124,20 @@ export function ReverseSidebar({ rects, onUpdateRect, onRemoveRect, onAddRect }:
                   onChange={(e) => onUpdateRect(rect.id, { zoom: parseFloat(e.target.value) })}
                 />
                 <input
-                  type="text"
+                  type="number"
                   className="param-value"
-                  value={`${rect.zoom.toFixed(1)}%`}
-                  onFocus={(e) => {
-                    (e.target as HTMLInputElement).value = rect.zoom.toFixed(1);
-                    (e.target as HTMLInputElement).select();
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={parseFloat(rect.zoom.toFixed(1))}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (!isNaN(v)) {
+                      onUpdateRect(rect.id, { zoom: Math.max(0, Math.min(100, v)) });
+                    }
                   }}
-                  onBlur={(e) => {
-                    let v = parseFloat(e.target.value);
-                    if (isNaN(v)) v = rect.zoom;
-                    v = Math.max(0, Math.min(100, v));
-                    onUpdateRect(rect.id, { zoom: v });
-                  }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                 />
+                <span className="param-unit">%</span>
               </div>
               <div style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 有効範囲: {range.min}% 〜 {range.max}%
