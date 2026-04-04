@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Mode, PinPParams } from './types';
 import { PRESETS } from './utils/constants';
-import { decodePinps } from './utils/share';
+import { decodePinps, encodePinps } from './utils/share';
 import { ForwardMode } from './components/ForwardMode';
 import { ReverseMode } from './components/ReverseMode';
 
@@ -25,6 +25,10 @@ function getInitialPinps(): Record<number, PinPParams> {
 export default function App() {
   const [mode, setMode] = useState<Mode>('forward');
   const [pinps, setPinps] = useState<Record<number, PinPParams>>(getInitialPinps);
+
+  useEffect(() => {
+    history.replaceState(null, '', `#${encodePinps(pinps)}`);
+  }, [pinps]);
 
   return (
     <div className="app">

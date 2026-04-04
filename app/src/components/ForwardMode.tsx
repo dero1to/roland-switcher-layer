@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { PinPParams, PixelRect } from '../types';
 import { PRESETS, COLORS, W, H } from '../utils/constants';
 import { calcRect, detectOverlaps, buildForwardExportJson, buildForwardExportText } from '../utils/calc';
-import { encodePinps } from '../utils/share';
 import { ForwardSidebar } from './ForwardSidebar';
 import { Monitor } from './Monitor';
 
@@ -180,10 +179,8 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
   }, [pinps, showToast]);
 
   const copyShareUrl = useCallback(() => {
-    const hash = encodePinps(pinps);
-    const url = `${location.origin}${location.pathname}#${hash}`;
-    navigator.clipboard.writeText(url).then(showToast);
-  }, [pinps, showToast]);
+    navigator.clipboard.writeText(location.href).then(showToast);
+  }, [showToast]);
 
   // Compute rects and DSK info
   const enabledRects: (PixelRect & { id: number })[] = [];
