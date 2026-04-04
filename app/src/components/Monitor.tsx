@@ -14,12 +14,14 @@ interface MonitorProps {
   onRectDrag?: (id: number, dx: number, dy: number) => void;
   onZoomDrag?: (id: number, dy: number) => void;
   onImgZoomDrag?: (id: number, dy: number) => void;
+  onCropHDrag?: (id: number, dx: number) => void;
+  onCropVDrag?: (id: number, dy: number) => void;
   children?: React.ReactNode;
 }
 
-type DragMode = 'move' | 'zoom' | 'imgZoom';
+type DragMode = 'move' | 'zoom' | 'imgZoom' | 'cropH' | 'cropHInv' | 'cropV' | 'cropVInv';
 
-export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, children }: MonitorProps) {
+export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHDrag, onCropVDrag, children }: MonitorProps) {
   const monitorRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ id: number; startX: number; startY: number; mode: DragMode } | null>(null);
 
@@ -30,7 +32,7 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, children
   }, []);
 
   useEffect(() => {
-    if (!onRectDrag && !onZoomDrag && !onImgZoomDrag) return;
+    if (!onRectDrag && !onZoomDrag && !onImgZoomDrag && !onCropHDrag && !onCropVDrag) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragRef.current || !monitorRef.current) return;
@@ -46,6 +48,14 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, children
         onZoomDrag(d.id, dy);
       } else if (d.mode === 'imgZoom' && onImgZoomDrag) {
         onImgZoomDrag(d.id, dy);
+      } else if (d.mode === 'cropH' && onCropHDrag) {
+        onCropHDrag(d.id, dx);
+      } else if (d.mode === 'cropHInv' && onCropHDrag) {
+        onCropHDrag(d.id, -dx);
+      } else if (d.mode === 'cropV' && onCropVDrag) {
+        onCropVDrag(d.id, dy);
+      } else if (d.mode === 'cropVInv' && onCropVDrag) {
+        onCropVDrag(d.id, -dy);
       }
     };
 
@@ -59,9 +69,9 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, children
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [onRectDrag, onZoomDrag, onImgZoomDrag]);
+  }, [onRectDrag, onZoomDrag, onImgZoomDrag, onCropHDrag, onCropVDrag]);
 
-  const interactive = !!(onRectDrag || onZoomDrag || onImgZoomDrag);
+  const interactive = !!(onRectDrag || onZoomDrag || onImgZoomDrag || onCropHDrag || onCropVDrag);
 
   return (
     <div className="monitor" ref={monitorRef}>
@@ -96,8 +106,31 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, children
             </div>
             {interactive && (
               <>
+                {/* 左辺: 外(左)に引くと広がる / 右辺: 外(右)に引くと広がる */}
                 <div
-                  className="pinp-handle pinp-handle-zoom"
+                  className="pinp-handle pinp-handle-crop-h pinp-handle-left"
+                  title="クロッピング H（外に引くと広がる）"
+                  onMouseDown={(e) => startDrag(e, item.id, 'cropHInv')}
+                />
+                <div
+                  className="pinp-handle pinp-handle-crop-h pinp-handle-right"
+                  title="クロッピング H（外に引くと広がる）"
+                  onMouseDown={(e) => startDrag(e, item.id, 'cropH')}
+                />
+                {/* 上辺: 外(上)に引くと広がる / 下辺: 外(下)に引くと広がる */}
+                <div
+                  className="pinp-handle pinp-handle-crop-v pinp-handle-top"
+                  title="クロッピング V（外に引くと広がる）"
+                  onMouseDown={(e) => startDrag(e, item.id, 'cropVInv')}
+                />
+                <div
+                  className="pinp-handle pinp-handle-crop-v pinp-handle-bottom"
+                  title="クロッピング V（外に引くと広がる）"
+                  onMouseDown={(e) => startDrag(e, item.id, 'cropV')}
+                />
+                {/* 右下: 小画面 Zoom */}
+                <div
+                  className="pinp-handle pinp-handle-circle pinp-handle-zoom"
                   title="小画面 Zoom（上下ドラッグ）"
                   onMouseDown={(e) => startDrag(e, item.id, 'zoom')}
                 >
@@ -106,8 +139,9 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, children
                     <line x1="10.5" y1="10.5" x2="14" y2="14" />
                   </svg>
                 </div>
+                {/* 左上: 映像 Zoom */}
                 <div
-                  className="pinp-handle pinp-handle-img-zoom"
+                  className="pinp-handle pinp-handle-circle pinp-handle-img-zoom"
                   title="映像 Zoom（上下ドラッグ）"
                   onMouseDown={(e) => startDrag(e, item.id, 'imgZoom')}
                 >

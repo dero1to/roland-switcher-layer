@@ -318,16 +318,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .pinp-handle {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 50%;
-  cursor: ns-resize;
-  color: var(--text-dim);
   opacity: 0;
   transition: opacity 0.15s;
   z-index: 10;
@@ -339,12 +331,47 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--surface);
   color: var(--text);
 }
+
+/* クロップハンドル: 辺の中央に配置するバー */
+.pinp-handle-crop-h {
+  width: 6px;
+  height: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+  border-radius: 3px;
+}
+.pinp-handle-crop-h.pinp-handle-left { left: -4px; }
+.pinp-handle-crop-h.pinp-handle-right { right: -4px; }
+
+.pinp-handle-crop-v {
+  width: 24px;
+  height: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+  border-radius: 3px;
+}
+.pinp-handle-crop-v.pinp-handle-top { top: -4px; }
+.pinp-handle-crop-v.pinp-handle-bottom { bottom: -4px; }
+
+/* 虫眼鏡ハンドル: 対角に配置 */
+.pinp-handle-circle {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: ns-resize;
+  color: var(--text-dim);
+}
 .pinp-handle-zoom {
   bottom: -4px;
   right: -4px;
 }
 .pinp-handle-img-zoom {
-  bottom: -4px;
+  top: -4px;
   left: -4px;
 }
 .pinp-rect-label {

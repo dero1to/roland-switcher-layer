@@ -69,6 +69,34 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
     setActivePreset(null);
   }, [setPinps]);
 
+  const handleCropHDrag = useCallback((id: number, dx: number) => {
+    setPinps(prev => {
+      const p = prev[id];
+      if (!p || !p.enabled) return prev;
+      // dx > 0 → 右に広げる → cropH増加
+      const zf = p.zoom / 100;
+      const fullW = W * zf;
+      const dCropH = fullW > 0 ? (dx / fullW) * 100 : 0;
+      const cropH = Math.max(1, Math.min(100, parseFloat((p.cropH + dCropH).toFixed(1))));
+      return { ...prev, [id]: { ...p, cropH } };
+    });
+    setActivePreset(null);
+  }, [setPinps]);
+
+  const handleCropVDrag = useCallback((id: number, dy: number) => {
+    setPinps(prev => {
+      const p = prev[id];
+      if (!p || !p.enabled) return prev;
+      // dy > 0 → 下に広げる → cropV増加
+      const zf = p.zoom / 100;
+      const fullH = H * zf;
+      const dCropV = fullH > 0 ? (dy / fullH) * 100 : 0;
+      const cropV = Math.max(1, Math.min(100, parseFloat((p.cropV + dCropV).toFixed(1))));
+      return { ...prev, [id]: { ...p, cropV } };
+    });
+    setActivePreset(null);
+  }, [setPinps]);
+
   const handleToggle = useCallback((id: number) => {
     setPinps(prev => ({
       ...prev,
@@ -164,7 +192,14 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
         </div>
         <div>
           <div className="preview-label">プレビュー</div>
-          <Monitor rects={enabledRects.map(r => ({ id: r.id, rect: r }))} onRectDrag={handleRectDrag} onZoomDrag={handleZoomDrag} onImgZoomDrag={handleImgZoomDrag} />
+          <Monitor
+            rects={enabledRects.map(r => ({ id: r.id, rect: r }))}
+            onRectDrag={handleRectDrag}
+            onZoomDrag={handleZoomDrag}
+            onImgZoomDrag={handleImgZoomDrag}
+            onCropHDrag={handleCropHDrag}
+            onCropVDrag={handleCropVDrag}
+          />
         </div>
         <div className="output-section">
           <div className="output-card">
