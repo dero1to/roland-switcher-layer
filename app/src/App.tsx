@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import type { Mode, PinPParams } from './types';
 import { PRESETS } from './utils/constants';
+import { decodePinps } from './utils/share';
 import { ForwardMode } from './components/ForwardMode';
 import { ReverseMode } from './components/ReverseMode';
 
 function getInitialPinps(): Record<number, PinPParams> {
+  // Try to restore from URL hash
+  const hash = location.hash.slice(1);
+  if (hash) {
+    const decoded = decodePinps(hash);
+    if (decoded) return decoded;
+  }
+
   const pr = PRESETS[0];
   return {
     1: { ...JSON.parse(JSON.stringify(pr.config[1])), imageId: 'person' },

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { PinPParams, PixelRect } from '../types';
 import { PRESETS, COLORS, W, H } from '../utils/constants';
 import { calcRect, detectOverlaps, buildForwardExportJson, buildForwardExportText } from '../utils/calc';
+import { encodePinps } from '../utils/share';
 import { ForwardSidebar } from './ForwardSidebar';
 import { Monitor } from './Monitor';
 
@@ -17,7 +18,7 @@ function loadSlots(): (SavedSlot | null)[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch { /* ignore */ }
-  return [null, null, null];
+  return [null, null, null, null, null];
 }
 
 function saveSlots(slots: (SavedSlot | null)[]) {
@@ -178,6 +179,12 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
     navigator.clipboard.writeText(buildForwardExportText(pinps)).then(showToast);
   }, [pinps, showToast]);
 
+  const copyShareUrl = useCallback(() => {
+    const hash = encodePinps(pinps);
+    const url = `${location.origin}${location.pathname}#${hash}`;
+    navigator.clipboard.writeText(url).then(showToast);
+  }, [pinps, showToast]);
+
   // Compute rects and DSK info
   const enabledRects: (PixelRect & { id: number })[] = [];
   for (let i = 1; i <= 4; i++) {
@@ -295,7 +302,8 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
           </div>
         </div>
         <div className="export-bar">
-          <button className="export-btn primary" onClick={copyJson}>JSON コピー</button>
+          <button className="export-btn primary" onClick={copyShareUrl}>共有URLコピー</button>
+          <button className="export-btn" onClick={copyJson}>JSON コピー</button>
           <button className="export-btn" onClick={copyText}>テキスト コピー</button>
           <span className={`toast${toastVisible ? ' show' : ''}`}>コピーしました</span>
         </div>
