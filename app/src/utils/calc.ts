@@ -1,4 +1,4 @@
-import type { PinPParams, PixelRect, ReverseParams, ReverseRect } from '../types';
+import type { PinPParams, PixelRect } from '../types';
 import { W, H } from './constants';
 
 export function calcRect(p: Pick<PinPParams, 'cropH' | 'cropV' | 'posH' | 'posV' | 'zoom'>): PixelRect {
@@ -13,41 +13,6 @@ export function calcRect(p: Pick<PinPParams, 'cropH' | 'cropV' | 'posH' | 'posV'
     w: Math.round(visW),
     h: Math.round(visH),
   };
-}
-
-export function reverseCalcWithZoom(rect: PixelRect, zoomPct: number): ReverseParams | null {
-  const { x, y, w, h } = rect;
-  const zf = zoomPct / 100;
-  const fullW = W * zf;
-  const fullH = H * zf;
-  if (fullW < 1 || fullH < 1) return null;
-
-  const cropH = (w / fullW) * 100;
-  const cropV = (h / fullH) * 100;
-  if (cropH > 100.05 || cropV > 100.05) return null;
-
-  const availX = W - w;
-  const availY = H - h;
-  const posH = availX > 0 ? (x / availX) * 100 - 50 : 0;
-  const posV = availY > 0 ? (y / availY) * 100 - 50 : 0;
-
-  const clamp = (v: number, mn: number, mx: number) => Math.max(mn, Math.min(mx, v));
-  return {
-    zoom: parseFloat(zoomPct.toFixed(1)),
-    cropH: clamp(parseFloat(cropH.toFixed(1)), 0.1, 100),
-    cropV: clamp(parseFloat(cropV.toFixed(1)), 0.1, 100),
-    posH: clamp(parseFloat(posH.toFixed(1)), -50, 50),
-    posV: clamp(parseFloat(posV.toFixed(1)), -50, 50),
-  };
-}
-
-export function getZoomRange(rect: PixelRect): { min: number; max: number } {
-  const minZoom = Math.max(rect.w / W, rect.h / H) * 100;
-  return { min: Math.max(0, parseFloat(minZoom.toFixed(1))), max: 100 };
-}
-
-export function defaultZoom(rect: PixelRect): number {
-  return getZoomRange(rect).min;
 }
 
 export function detectOverlaps(rects: (PixelRect & { id: number })[]) {
@@ -93,15 +58,30 @@ export function buildForwardExportText(pinps: Record<number, PinPParams>) {
   return text;
 }
 
-export function buildReverseExportText(rects: ReverseRect[]) {
-  let text = `V-160HD PinP 逆算結果 (1920×1080)\n${'─'.repeat(40)}\n`;
-  for (const rect of rects) {
-    if (rect.w <= 0 || rect.h <= 0) continue;
-    const p = reverseCalcWithZoom(rect, rect.zoom);
-    if (!p) continue;
-    text += `\n矩形 ${rect.id} (X=${rect.x} Y=${rect.y} W=${rect.w} H=${rect.h})\n`;
-    text += `  クロッピング: H(${p.cropH}%) V(${p.cropV}%)\n`;
-    text += `  小画面: H(${p.posH}%) V(${p.posV}%) Zoom(${p.zoom}%)\n`;
+export function buildDskInfo(enabledRects: (PixelRect & { id: number })[], overlaps: ReturnType<typeof detectOverlaps>): string {
+  if (enabledRects.length === 0) return 'PinP未設定。DSKは画面全体を使えます。';
+
+  let minY = H, maxY = 0, minX = W, maxX = 0;
+  for (const r of enabledRects) {
+    minY = Math.min(minY, r.y);
+    maxY = Math.max(maxY, r.y + r.h);
+    minX = Math.min(minX, r.x);
+    maxX = Math.max(maxX, r.x + r.w);
   }
-  return text;
+  let html = '<strong>映像と干渉しない領域：</strong><br>';
+  if (minY > 0) html += `上部 <code>${minY}px</code><br>`;
+  if (H - maxY > 0) html += `下部 <code>${H - maxY}px</code><br>`;
+  if (minX > 0) html += `左側 <code>${minX}px</code><br>`;
+  if (W - maxX > 0) html += `右側 <code>${W - maxX}px</code><br>`;
+  if (minY <= 0 && H - maxY <= 0 && minX <= 0 && W - maxX <= 0) html += '余白なし<br>';
+  if (overlaps.length) {
+    html += '<br><strong style="color:#d94a6e;">⚠ 重なり検出：</strong><br>';
+    for (const o of overlaps) {
+      const area = o.w * o.h;
+      const pct = (area / (W * H) * 100).toFixed(1);
+      html += `PinP ${o.a} × PinP ${o.b}：<code>${o.w}×${o.h}px</code>（${area.toLocaleString()}px² / ${pct}%）<br>`;
+      html += `<span style="font-size:11px;color:#888;">位置 X=${o.x} Y=${o.y}〜X=${o.x + o.w} Y=${o.y + o.h}</span><br>`;
+    }
+  }
+  return html;
 }

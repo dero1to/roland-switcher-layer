@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import type { Mode, PinPParams } from './types';
+import { useState, useEffect } from 'react';
+import type { PinPParams } from './types';
 import { PRESETS } from './utils/constants';
+import { decodePinps, encodePinps } from './utils/share';
 import { ForwardMode } from './components/ForwardMode';
-import { ReverseMode } from './components/ReverseMode';
 
 function getInitialPinps(): Record<number, PinPParams> {
+  const hash = location.hash.slice(1);
+  if (hash) {
+    const decoded = decodePinps(hash);
+    if (decoded) return decoded;
+  }
+
   const pr = PRESETS[0];
   return {
     1: { ...JSON.parse(JSON.stringify(pr.config[1])), imageId: 'person' },
@@ -15,8 +21,11 @@ function getInitialPinps(): Record<number, PinPParams> {
 }
 
 export default function App() {
-  const [mode, setMode] = useState<Mode>('forward');
   const [pinps, setPinps] = useState<Record<number, PinPParams>>(getInitialPinps);
+
+  useEffect(() => {
+    history.replaceState(null, '', `#${encodePinps(pinps)}`);
+  }, [pinps]);
 
   return (
     <div className="app">
@@ -27,26 +36,7 @@ export default function App() {
         <span className="badge">1920 × 1080</span>
       </div>
 
-      <div className="mode-tabs">
-        <button
-          className={`mode-tab${mode === 'forward' ? ' active' : ''}`}
-          onClick={() => setMode('forward')}
-        >
-          <span className="mode-icon">▶</span>パラメータ → プレビュー
-        </button>
-        <button
-          className={`mode-tab${mode === 'reverse' ? ' active' : ''}`}
-          onClick={() => setMode('reverse')}
-        >
-          <span className="mode-icon">◀</span>ピクセル → パラメータ逆算
-        </button>
-      </div>
-
-      {mode === 'forward' ? (
-        <ForwardMode pinps={pinps} setPinps={setPinps} />
-      ) : (
-        <ReverseMode />
-      )}
+      <ForwardMode pinps={pinps} setPinps={setPinps} />
     </div>
   );
 }
