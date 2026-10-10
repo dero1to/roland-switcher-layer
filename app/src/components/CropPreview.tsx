@@ -1,21 +1,18 @@
 import type { PinPParams } from '../types';
-import { W, H, GRID_LABELS, SAMPLE_IMAGES } from '../utils/constants';
+import { W, H, GRID_LABELS } from '../utils/constants';
+import { calcSourceView } from '../utils/calc';
+import { useImages } from '../contexts/imageContext';
 
 interface CropPreviewProps {
   params: PinPParams;
 }
 
 export function CropPreview({ params: p }: CropPreviewProps) {
-  const imgZf = p.imgZoom / 100;
-  const visibleW = p.cropH / imgZf;
-  const visibleH = p.cropV / imgZf;
+  const { resolveUrl } = useImages();
+  const { visibleW, visibleH, offsetX, offsetY } = calcSourceView(p);
   const visibleWpx = Math.round(W * visibleW / 100);
   const visibleHpx = Math.round(H * visibleH / 100);
-  const offsetX = (100 - visibleW) * ((p.imgH + 50) / 100);
-  const offsetY = (100 - visibleH) * ((p.imgV + 50) / 100);
-
-  const imgData = SAMPLE_IMAGES.find(img => img.id === p.imageId) || SAMPLE_IMAGES[0];
-  const imagePath = imgData.path;
+  const imagePath = resolveUrl(p.imageId);
 
   return (
     <div className="crop-preview-wrap">

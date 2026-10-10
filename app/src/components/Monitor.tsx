@@ -7,6 +7,8 @@ interface MonitorRectItem {
   rect: PixelRect;
   color?: string;
   label?: string;
+  imageUrl?: string | null;
+  sourceView?: { visibleW: number; visibleH: number; offsetX: number; offsetY: number };
 }
 
 interface MonitorProps {
@@ -16,12 +18,13 @@ interface MonitorProps {
   onImgZoomDrag?: (id: number, dy: number) => void;
   onCropHDrag?: (id: number, dx: number) => void;
   onCropVDrag?: (id: number, dy: number) => void;
+  dsk?: { url: string; level: number } | null;
   children?: React.ReactNode;
 }
 
 type DragMode = 'move' | 'zoom' | 'imgZoom' | 'cropH' | 'cropHInv' | 'cropV' | 'cropVInv';
 
-export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHDrag, onCropVDrag, children }: MonitorProps) {
+export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHDrag, onCropVDrag, dsk, children }: MonitorProps) {
   const monitorRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ id: number; startX: number; startY: number; mode: DragMode } | null>(null);
 
@@ -78,6 +81,12 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHD
       <div className="monitor-grid" />
       <div className="monitor-center-h" />
       <div className="monitor-center-v" />
+      {dsk && (
+        <div
+          className="dsk-image"
+          style={{ backgroundImage: `url(${dsk.url})`, opacity: dsk.level / 100 }}
+        />
+      )}
       <div className="dsk-outline" />
       <div className="dsk-badge">DSK</div>
       {rects.map((item) => {
@@ -85,7 +94,7 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHD
         return (
           <div
             key={item.id}
-            className={`pinp-rect${onRectDrag ? ' draggable' : ''}`}
+            className={`pinp-rect${onRectDrag ? ' draggable' : ''}${item.imageUrl ? ' has-image' : ''}`}
             data-pinp={item.id}
             onMouseDown={onRectDrag ? (e) => startDrag(e, item.id, 'move') : undefined}
             style={{
@@ -100,6 +109,20 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHD
                 : undefined,
             }}
           >
+            {item.imageUrl && item.sourceView && (
+              <div className="pinp-image-clip">
+                <div
+                  className="pinp-image"
+                  style={{
+                    backgroundImage: `url(${item.imageUrl})`,
+                    width: `${10000 / item.sourceView.visibleW}%`,
+                    height: `${10000 / item.sourceView.visibleH}%`,
+                    left: `${(-item.sourceView.offsetX * 100) / item.sourceView.visibleW}%`,
+                    top: `${(-item.sourceView.offsetY * 100) / item.sourceView.visibleH}%`,
+                  }}
+                />
+              </div>
+            )}
             <div className="pinp-rect-label" style={item.color ? { color: item.color } : undefined}>
               {item.label || `PinP ${item.id}`}
               <small>{r.w}&times;{r.h}</small>

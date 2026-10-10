@@ -1,7 +1,7 @@
 import type { ParamDef } from '../types';
 
 interface ParamSliderProps {
-  param: ParamDef;
+  param: Omit<ParamDef, 'key'>;
   value: number;
   onChange: (value: number) => void;
 }
