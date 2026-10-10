@@ -19,20 +19,23 @@ interface MonitorProps {
   onCropHDrag?: (id: number, dx: number) => void;
   onCropVDrag?: (id: number, dy: number) => void;
   dsk?: { url: string; level: number } | null;
+  selectedId?: number;
+  onSelect?: (id: number) => void;
   children?: React.ReactNode;
 }
 
 type DragMode = 'move' | 'zoom' | 'imgZoom' | 'cropH' | 'cropHInv' | 'cropV' | 'cropVInv';
 
-export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHDrag, onCropVDrag, dsk, children }: MonitorProps) {
+export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHDrag, onCropVDrag, dsk, selectedId, onSelect, children }: MonitorProps) {
   const monitorRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ id: number; startX: number; startY: number; mode: DragMode } | null>(null);
 
   const startDrag = useCallback((e: React.MouseEvent, id: number, mode: DragMode) => {
     e.preventDefault();
     e.stopPropagation();
+    onSelect?.(id);
     dragRef.current = { id, startX: e.clientX, startY: e.clientY, mode };
-  }, []);
+  }, [onSelect]);
 
   useEffect(() => {
     if (!onRectDrag && !onZoomDrag && !onImgZoomDrag && !onCropHDrag && !onCropVDrag) return;
@@ -94,9 +97,9 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHD
         return (
           <div
             key={item.id}
-            className={`pinp-rect${onRectDrag ? ' draggable' : ''}${item.imageUrl ? ' has-image' : ''}`}
+            className={`pinp-rect${onRectDrag ? ' draggable' : ''}${item.imageUrl ? ' has-image' : ''}${selectedId === item.id ? ' selected' : ''}`}
             data-pinp={item.id}
-            onMouseDown={onRectDrag ? (e) => startDrag(e, item.id, 'move') : undefined}
+            onMouseDown={onRectDrag ? (e) => startDrag(e, item.id, 'move') : onSelect ? () => onSelect(item.id) : undefined}
             style={{
               left: `${(r.x / W) * 100}%`,
               top: `${(r.y / H) * 100}%`,

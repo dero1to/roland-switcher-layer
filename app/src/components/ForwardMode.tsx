@@ -21,6 +21,8 @@ interface ForwardModeProps {
 
 export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
   const [activePreset, setActivePreset] = useState<number | null>(null);
+  /** 編集対象（1〜4: PinP / 0: DSK）。モニタとサイドバーで共有 */
+  const [selected, setSelected] = useState(1);
   const toast = useToast();
   const { resolveUrl } = useImages();
   const [dsk, setDsk] = useDsk();
@@ -112,6 +114,8 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
               sourceView: calcSourceView(pinps[r.id]),
             }))}
             dsk={dsk.visible && dskImageUrl ? { url: dskImageUrl, level: dsk.level } : null}
+            selectedId={selected}
+            onSelect={setSelected}
             onRectDrag={dragHandlers.handleRectDrag}
             onZoomDrag={dragHandlers.handleZoomDrag}
             onImgZoomDrag={dragHandlers.handleImgZoomDrag}
@@ -129,6 +133,8 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
         dsk={dsk}
         onDskChange={handleDskChange}
         dskImageUrl={dskImageUrl}
+        active={selected}
+        onActiveChange={setSelected}
       />
     </>
   );

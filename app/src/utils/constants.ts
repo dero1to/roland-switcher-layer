@@ -14,9 +14,9 @@ export const COLOR_ARR = ['#4a90d9', '#d94a6e', '#e6a030', '#9b59b6'];
 
 export const SAMPLE_IMAGES: SampleImage[] = [
   { id: 'grid', name: 'グリッド', path: null },
-  { id: 'person', name: '人物', path: 'images/person.jpg' },
-  { id: 'slide', name: 'スライド', path: 'images/slide.jpg' },
-  { id: 'room', name: '部屋', path: 'images/room.jpg' },
+  { id: 'person', name: '人物', path: 'images/person.svg' },
+  { id: 'slide', name: 'スライド', path: 'images/slide.svg' },
+  { id: 'room', name: '部屋', path: 'images/room.svg' },
 ];
 
 export const GRID_LABELS = ['左上', '上', '右上', '左', '中央', '右', '左下', '下', '右下'];
