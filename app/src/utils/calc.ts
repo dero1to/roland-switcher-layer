@@ -15,6 +15,16 @@ export function calcRect(p: Pick<PinPParams, 'cropH' | 'cropV' | 'posH' | 'posV'
   };
 }
 
+/** 入力映像(100%)のうち PinP に映る領域（%） */
+export function calcSourceView(p: Pick<PinPParams, 'cropH' | 'cropV' | 'imgH' | 'imgV' | 'imgZoom'>) {
+  const imgZf = p.imgZoom / 100;
+  const visibleW = p.cropH / imgZf;
+  const visibleH = p.cropV / imgZf;
+  const offsetX = (100 - visibleW) * ((p.imgH + 50) / 100);
+  const offsetY = (100 - visibleH) * ((p.imgV + 50) / 100);
+  return { visibleW, visibleH, offsetX, offsetY };
+}
+
 export function detectOverlaps(rects: (PixelRect & { id: number })[]) {
   const overlaps: { a: number; b: number; x: number; y: number; w: number; h: number }[] = [];
   for (let a = 0; a < rects.length; a++) {

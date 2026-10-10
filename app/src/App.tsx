@@ -3,6 +3,7 @@ import type { PinPParams } from './types';
 import { PRESETS } from './utils/constants';
 import { decodePinps, encodePinps } from './utils/share';
 import { ForwardMode } from './components/ForwardMode';
+import { ImageProvider } from './contexts/ImageProvider';
 
 function getInitialPinps(): Record<number, PinPParams> {
   const hash = location.hash.slice(1);
@@ -36,7 +37,9 @@ export default function App() {
         <span className="badge">1920 × 1080</span>
       </div>
 
-      <ForwardMode pinps={pinps} setPinps={setPinps} />
+      <ImageProvider>
+        <ForwardMode pinps={pinps} setPinps={setPinps} />
+      </ImageProvider>
     </div>
   );
 }

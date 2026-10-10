@@ -43,3 +43,15 @@ export interface SampleImage {
   name: string;
   path: string | null;
 }
+
+/** alpha: 画像自身のアルファチャンネル / fillKey: Fill画像 + Key画像(輝度=透過率) */
+export type DskKeyMode = 'alpha' | 'fillKey';
+
+export interface DskSettings {
+  visible: boolean;
+  mode: DskKeyMode;
+  fillId: string | null;
+  keyId: string | null;
+  keyInvert: boolean;
+  level: number;
+}

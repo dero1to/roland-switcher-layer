@@ -736,3 +736,113 @@ input[type="range"]::-webkit-slider-thumb {
   }
   .param-value { width: 48px; font-size: 9px; }
 }
+
+/* ── Images on monitor ── */
+.pinp-image-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.pinp-image {
+  position: absolute;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.pinp-rect-label { position: relative; z-index: 1; }
+.pinp-rect.has-image .pinp-rect-label {
+  background: rgba(0, 0, 0, 0.55);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.dsk-image {
+  position: absolute;
+  inset: 0;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* ── Image selector (upload) ── */
+.checker {
+  background-color: #2a2a34;
+  background-image:
+    linear-gradient(45deg, #3a3a46 25%, transparent 25%),
+    linear-gradient(-45deg, #3a3a46 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #3a3a46 75%),
+    linear-gradient(-45deg, transparent 75%, #3a3a46 75%);
+  background-size: 10px 10px;
+  background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+}
+.image-btn.checker {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.image-btn-wrap { position: relative; }
+.image-btn-wrap .image-btn { display: block; }
+.image-btn-remove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+}
+.image-btn-wrap:hover .image-btn-remove { display: block; }
+.image-btn-add,
+.image-btn-none {
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 12px;
+  border-style: dashed;
+}
+.image-btn-none { font-size: 9px; border-style: solid; }
+
+/* ── DSK panel ── */
+.segmented { display: flex; gap: 4px; }
+.segmented-btn {
+  flex: 1;
+  padding: 5px 8px;
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.segmented-btn.active { color: var(--text); border-color: var(--green); background: var(--green-dim); }
+.dsk-mode-desc { font-size: 10px; color: var(--text-muted); margin-top: 6px; }
+.dsk-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.dsk-preview {
+  position: relative;
+  aspect-ratio: 16/9;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dsk-preview img { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* 5タブ（PinP1〜4 + DSK）が収まるようトグルをラベル下に配置 */
+.pinp-tab { flex-direction: column; gap: 3px; min-width: 0; }
+.pinp-tab .pinp-toggle-sm { margin-left: 0; }

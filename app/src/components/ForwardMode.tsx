@@ -1,10 +1,13 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { PinPParams, PixelRect } from '../types';
 import { PRESETS } from '../utils/constants';
-import { calcRect, detectOverlaps, buildDskInfo, buildForwardExportJson, buildForwardExportText } from '../utils/calc';
+import { calcRect, calcSourceView, detectOverlaps, buildDskInfo, buildForwardExportJson, buildForwardExportText } from '../utils/calc';
 import { useDragHandlers } from '../hooks/useDragHandlers';
 import { useSaveSlots } from '../hooks/useSaveSlots';
 import { useToast } from '../hooks/useToast';
+import { useDsk, useDskImageUrl } from '../hooks/useDsk';
+import { useImages } from '../contexts/imageContext';
+import type { DskSettings } from '../types';
 import { ForwardSidebar } from './ForwardSidebar';
 import { Monitor } from './Monitor';
 import { Toolbar } from './Toolbar';
@@ -19,6 +22,12 @@ interface ForwardModeProps {
 export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
   const [activePreset, setActivePreset] = useState<number | null>(null);
   const toast = useToast();
+  const { resolveUrl } = useImages();
+  const [dsk, setDsk] = useDsk();
+  const dskImageUrl = useDskImageUrl(dsk);
+  const handleDskChange = useCallback((updates: Partial<DskSettings>) => {
+    setDsk(prev => ({ ...prev, ...updates }));
+  }, [setDsk]);
   const { slots, saveSlot, loadSlot, deleteSlot } = useSaveSlots(pinps, setPinps);
 
   const clearPreset = useCallback(() => setActivePreset(null), []);
@@ -96,7 +105,13 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
         <Toolbar {...sharedProps} />
         <div className="monitor-wrap">
           <Monitor
-            rects={enabledRects.map(r => ({ id: r.id, rect: r }))}
+            rects={enabledRects.map(r => ({
+              id: r.id,
+              rect: r,
+              imageUrl: resolveUrl(pinps[r.id].imageId),
+              sourceView: calcSourceView(pinps[r.id]),
+            }))}
+            dsk={dsk.visible && dskImageUrl ? { url: dskImageUrl, level: dsk.level } : null}
             onRectDrag={dragHandlers.handleRectDrag}
             onZoomDrag={dragHandlers.handleZoomDrag}
             onImgZoomDrag={dragHandlers.handleImgZoomDrag}
@@ -107,7 +122,14 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
         <BottomBar {...sharedProps} />
         <MobileTools {...sharedProps} />
       </div>
-      <ForwardSidebar pinps={pinps} onUpdate={handleUpdate} onToggle={handleToggle} />
+      <ForwardSidebar
+        pinps={pinps}
+        onUpdate={handleUpdate}
+        onToggle={handleToggle}
+        dsk={dsk}
+        onDskChange={handleDskChange}
+        dskImageUrl={dskImageUrl}
+      />
     </>
   );
 }
