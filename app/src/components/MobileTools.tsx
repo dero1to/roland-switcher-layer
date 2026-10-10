@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { PixelRect, PresetConfig } from '../types';
 import type { SavedSlot } from '../hooks/useSaveSlots';
-import { SlotButtons } from './Toolbar';
+import { SlotButtons, HistoryButtons } from './Toolbar';
 import { CoordTable } from './BottomBar';
 import { ExportButtons } from './ExportButtons';
 
@@ -11,14 +11,21 @@ interface MobileToolsProps {
   onApplyPreset: (idx: number) => void;
   slots: (SavedSlot | null)[];
   onSaveSlot: (idx: number) => void;
+  onRenameSlot: (idx: number, name: string) => void;
   onLoadSlot: (idx: number) => void;
   onDeleteSlot: (idx: number) => void;
   enabledRects: (PixelRect & { id: number })[];
   dskHtml: string;
+  onGuidePng: () => void;
   onCopyShareUrl: () => void;
   onCopyJson: () => void;
   onCopyText: () => void;
   toastVisible: boolean;
+  toastMessage: string;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export function MobileTools(props: MobileToolsProps) {
@@ -26,9 +33,12 @@ export function MobileTools(props: MobileToolsProps) {
 
   return (
     <div className={`mobile-tools${open ? ' open' : ''}`}>
-      <button className="mobile-tools-toggle" onClick={() => setOpen(v => !v)}>
-        ツール {open ? '▾' : '▸'}
-      </button>
+      <div className="mobile-tools-head">
+        <button className="mobile-tools-toggle" onClick={() => setOpen(v => !v)}>
+          ツール {open ? '▾' : '▸'}
+        </button>
+        <HistoryButtons onUndo={props.onUndo} onRedo={props.onRedo} canUndo={props.canUndo} canRedo={props.canRedo} />
+      </div>
       <div className="mobile-tools-body">
         <Section label="プリセット">
           <div className="toolbar-group">
@@ -45,7 +55,7 @@ export function MobileTools(props: MobileToolsProps) {
           </div>
         </Section>
         <Section label="保存スロット">
-          <SlotButtons slots={props.slots} onSave={props.onSaveSlot} onLoad={props.onLoadSlot} onDelete={props.onDeleteSlot} />
+          <SlotButtons slots={props.slots} onSave={props.onSaveSlot} onRename={props.onRenameSlot} onLoad={props.onLoadSlot} onDelete={props.onDeleteSlot} />
         </Section>
         <Section label="ピクセル座標">
           <CoordTable rects={props.enabledRects} />
@@ -54,7 +64,7 @@ export function MobileTools(props: MobileToolsProps) {
           <div className="dsk-info" dangerouslySetInnerHTML={{ __html: props.dskHtml }} />
         </Section>
         <Section label="エクスポート">
-          <ExportButtons onShareUrl={props.onCopyShareUrl} onJson={props.onCopyJson} onText={props.onCopyText} toastVisible={props.toastVisible} />
+          <ExportButtons onGuidePng={props.onGuidePng} onShareUrl={props.onCopyShareUrl} onJson={props.onCopyJson} onText={props.onCopyText} toastVisible={props.toastVisible} toastMessage={props.toastMessage} />
         </Section>
       </div>
     </div>

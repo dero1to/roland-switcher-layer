@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b4a63"/>
+      <stop offset="1" stop-color="#1c2333"/>
+    </linearGradient>
+    <radialGradient id="light" cx="0.5" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#light)"/>
+  <rect x="1380" y="140" width="360" height="520" rx="8" fill="#2a3448"/>
+  <rect x="1410" y="170" width="300" height="460" rx="4" fill="#4b5d7a"/>
+  <path d="M560 1080 C580 820 760 720 960 720 C1160 720 1340 820 1360 1080 Z" fill="#27324a"/>
+  <path d="M880 720 L960 860 L1040 720 Z" fill="#e8ecf2"/>
+  <rect x="905" y="600" width="110" height="140" fill="#d9a988"/>
+  <ellipse cx="960" cy="470" rx="170" ry="200" fill="#e6b896"/>
+  <path d="M790 450 C780 300 870 250 960 250 C1060 250 1150 300 1130 450 C1110 360 1040 340 960 340 C880 340 810 360 790 450 Z" fill="#2b2420"/>
+  <ellipse cx="900" cy="480" rx="14" ry="18" fill="#2b2420"/>
+  <ellipse cx="1020" cy="480" rx="14" ry="18" fill="#2b2420"/>
+  <path d="M915 580 Q960 610 1005 580" stroke="#9c5a4a" stroke-width="8" fill="none" stroke-linecap="round"/>
+</svg>

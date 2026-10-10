@@ -343,7 +343,8 @@ input[type="range"]::-webkit-slider-thumb {
   transition: opacity 0.15s;
   z-index: 10;
 }
-.pinp-rect:hover .pinp-handle {
+.pinp-rect:hover .pinp-handle,
+.pinp-rect.selected .pinp-handle {
   opacity: 1;
 }
 .pinp-handle:hover {
@@ -418,7 +419,7 @@ input[type="range"]::-webkit-slider-thumb {
 /* ── Bottom bar ── */
 .bottom-bar {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 12px;
   padding: 10px 16px;
   border-top: 1px solid var(--border);
@@ -578,6 +579,18 @@ input[type="range"]::-webkit-slider-thumb {
   transition: all 0.15s;
 }
 .slot-empty:hover { border-color: var(--accent); color: var(--text-dim); }
+.slot-overwrite.confirm, .slot-delete.confirm { color: #fff; background: #d94a6e; border-color: #d94a6e; }
+.slot-name-input {
+  width: 96px;
+  font-family: var(--sans);
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 4px 0 0 4px;
+  background: var(--bg, #0d0d12);
+  color: var(--text);
+  outline: none;
+}
 
 /* ── Crop preview ── */
 .crop-preview-wrap { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
@@ -685,7 +698,7 @@ input[type="range"]::-webkit-slider-thumb {
     border-top: 1px solid var(--border);
     order: 2;
   }
-  .pinp-tab span:not(.dot) { display: none; }
+  .pinp-tab-label { font-size: 9px; }
 
   .toolbar { display: none; }
   .bottom-bar { display: none; }
@@ -753,7 +766,9 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .pinp-rect-label { position: relative; z-index: 1; }
 .pinp-rect.has-image .pinp-rect-label {
-  background: rgba(0, 0, 0, 0.55);
+  opacity: 1;
+  background: rgba(10, 10, 16, 0.82);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -846,3 +861,54 @@ input[type="range"]::-webkit-slider-thumb {
 /* 5タブ（PinP1〜4 + DSK）が収まるようトグルをラベル下に配置 */
 .pinp-tab { flex-direction: column; gap: 3px; min-width: 0; }
 .pinp-tab .pinp-toggle-sm { margin-left: 0; }
+.pinp-tab-select {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.pinp-tab-label { overflow: hidden; text-overflow: ellipsis; }
+
+/* モニタ上の選択中 PinP */
+.pinp-rect.selected {
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 18px rgba(255, 255, 255, 0.25);
+}
+.pinp-rect.selected .pinp-handle { opacity: 1; }
+
+/* ── Touch / Pointer ── */
+.pinp-rect.draggable, .pinp-handle { touch-action: none; }
+/* 指で掴めるようハンドルの当たり判定を広げる */
+.pinp-handle::before { content: ''; position: absolute; inset: -10px; }
+@media (pointer: coarse) {
+  .pinp-handle-circle { width: 26px; height: 26px; }
+  .pinp-handle-crop-h { width: 10px; height: 32px; }
+  .pinp-handle-crop-v { width: 32px; height: 10px; }
+}
+
+/* ── Snap guides ── */
+.snap-guide { position: absolute; z-index: 20; pointer-events: none; background: #3ce0a0; box-shadow: 0 0 4px #3ce0a0; }
+.snap-guide-v { top: 0; bottom: 0; width: 1px; transform: translateX(-0.5px); }
+.snap-guide-h { left: 0; right: 0; height: 1px; transform: translateY(-0.5px); }
+
+/* ── Undo / Redo ── */
+.history-btn {
+  font-size: 13px;
+  line-height: 1;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.history-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.history-btn:disabled { opacity: 0.35; cursor: default; }
+.mobile-tools-head { display: flex; align-items: center; gap: 8px; padding-right: 12px; }
+.mobile-tools-head .mobile-tools-toggle { flex: 1; }

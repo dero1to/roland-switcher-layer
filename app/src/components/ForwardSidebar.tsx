@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { PinPParams, DskSettings } from '../types';
 import { COLORS, PARAMS } from '../utils/constants';
 import { ParamSlider } from './ParamSlider';
@@ -13,43 +12,37 @@ interface ForwardSidebarProps {
   dsk: DskSettings;
   onDskChange: (updates: Partial<DskSettings>) => void;
   dskImageUrl: string | null;
+  active: number;
+  onActiveChange: (id: number) => void;
 }
 
 const DSK_TAB = 0;
 
-export function ForwardSidebar({ pinps, onUpdate, onToggle, dsk, onDskChange, dskImageUrl }: ForwardSidebarProps) {
-  const [active, setActive] = useState(1);
+export function ForwardSidebar({ pinps, onUpdate, onToggle, dsk, onDskChange, dskImageUrl, active, onActiveChange }: ForwardSidebarProps) {
   const p = pinps[active];
 
   return (
     <div className="sidebar">
-      <div className="pinp-tabs">
+      <div className="pinp-tabs" role="tablist">
         {[1, 2, 3, 4].map((i) => (
-          <button
+          <Tab
             key={i}
-            className={`pinp-tab${active === i ? ' active' : ''}`}
-            style={{ '--tab-color': COLORS[i] } as React.CSSProperties}
-            onClick={() => setActive(i)}
-          >
-            <span className="dot" style={{ background: COLORS[i] }} />
-            <span>PinP {i}</span>
-            <button
-              className={`pinp-toggle pinp-toggle-sm${pinps[i].enabled ? ' active' : ''}`}
-              onClick={(e) => { e.stopPropagation(); onToggle(i); }}
-            />
-          </button>
-        ))}
-        <button
-          className={`pinp-tab${active === DSK_TAB ? ' active' : ''}`}
-          style={{ '--tab-color': 'var(--green)' } as React.CSSProperties}
-          onClick={() => setActive(DSK_TAB)}
-        >
-          <span>DSK</span>
-          <button
-            className={`pinp-toggle pinp-toggle-sm${dsk.visible ? ' active' : ''}`}
-            onClick={(e) => { e.stopPropagation(); onDskChange({ visible: !dsk.visible }); }}
+            label={`PinP ${i}`}
+            color={COLORS[i]}
+            active={active === i}
+            enabled={pinps[i].enabled}
+            onSelect={() => onActiveChange(i)}
+            onToggle={() => onToggle(i)}
           />
-        </button>
+        ))}
+        <Tab
+          label="DSK"
+          color="var(--green)"
+          active={active === DSK_TAB}
+          enabled={dsk.visible}
+          onSelect={() => onActiveChange(DSK_TAB)}
+          onToggle={() => onDskChange({ visible: !dsk.visible })}
+        />
       </div>
       <div className="pinp-panel">
         {active === DSK_TAB ? (
@@ -79,6 +72,34 @@ export function ForwardSidebar({ pinps, onUpdate, onToggle, dsk, onDskChange, ds
           <div className="pinp-disabled">PinP {active} は無効です</div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** タブ本体とトグルを兄弟要素にし、button の入れ子を避ける */
+function Tab({ label, color, active, enabled, onSelect, onToggle }: {
+  label: string;
+  color: string;
+  active: boolean;
+  enabled: boolean;
+  onSelect: () => void;
+  onToggle: () => void;
+}) {
+  return (
+    <div
+      className={`pinp-tab${active ? ' active' : ''}`}
+      style={{ '--tab-color': color } as React.CSSProperties}
+    >
+      <button className="pinp-tab-select" role="tab" aria-selected={active} onClick={onSelect}>
+        <span className="dot" style={{ background: color }} />
+        <span className="pinp-tab-label">{label}</span>
+      </button>
+      <button
+        className={`pinp-toggle pinp-toggle-sm${enabled ? ' active' : ''}`}
+        aria-label={`${label} ${enabled ? '無効にする' : '有効にする'}`}
+        aria-pressed={enabled}
+        onClick={onToggle}
+      />
     </div>
   );
 }
