@@ -5,13 +5,15 @@ import { ExportButtons } from './ExportButtons';
 interface BottomBarProps {
   enabledRects: (PixelRect & { id: number })[];
   dskHtml: string;
+  onGuidePng: () => void;
   onCopyShareUrl: () => void;
   onCopyJson: () => void;
   onCopyText: () => void;
   toastVisible: boolean;
+  toastMessage: string;
 }
 
-export function BottomBar({ enabledRects, dskHtml, onCopyShareUrl, onCopyJson, onCopyText, toastVisible }: BottomBarProps) {
+export function BottomBar({ enabledRects, dskHtml, onGuidePng, onCopyShareUrl, onCopyJson, onCopyText, toastVisible, toastMessage }: BottomBarProps) {
   return (
     <div className="bottom-bar">
       <div className="output-card">
@@ -24,7 +26,7 @@ export function BottomBar({ enabledRects, dskHtml, onCopyShareUrl, onCopyJson, o
       </div>
       <div className="output-card export-card">
         <h4>エクスポート</h4>
-        <ExportButtons onShareUrl={onCopyShareUrl} onJson={onCopyJson} onText={onCopyText} toastVisible={toastVisible} />
+        <ExportButtons onGuidePng={onGuidePng} onShareUrl={onCopyShareUrl} onJson={onCopyJson} onText={onCopyText} toastVisible={toastVisible} toastMessage={toastMessage} />
       </div>
     </div>
   );

@@ -11,14 +11,17 @@ interface MobileToolsProps {
   onApplyPreset: (idx: number) => void;
   slots: (SavedSlot | null)[];
   onSaveSlot: (idx: number) => void;
+  onRenameSlot: (idx: number, name: string) => void;
   onLoadSlot: (idx: number) => void;
   onDeleteSlot: (idx: number) => void;
   enabledRects: (PixelRect & { id: number })[];
   dskHtml: string;
+  onGuidePng: () => void;
   onCopyShareUrl: () => void;
   onCopyJson: () => void;
   onCopyText: () => void;
   toastVisible: boolean;
+  toastMessage: string;
 }
 
 export function MobileTools(props: MobileToolsProps) {
@@ -45,7 +48,7 @@ export function MobileTools(props: MobileToolsProps) {
           </div>
         </Section>
         <Section label="保存スロット">
-          <SlotButtons slots={props.slots} onSave={props.onSaveSlot} onLoad={props.onLoadSlot} onDelete={props.onDeleteSlot} />
+          <SlotButtons slots={props.slots} onSave={props.onSaveSlot} onRename={props.onRenameSlot} onLoad={props.onLoadSlot} onDelete={props.onDeleteSlot} />
         </Section>
         <Section label="ピクセル座標">
           <CoordTable rects={props.enabledRects} />
@@ -54,7 +57,7 @@ export function MobileTools(props: MobileToolsProps) {
           <div className="dsk-info" dangerouslySetInnerHTML={{ __html: props.dskHtml }} />
         </Section>
         <Section label="エクスポート">
-          <ExportButtons onShareUrl={props.onCopyShareUrl} onJson={props.onCopyJson} onText={props.onCopyText} toastVisible={props.toastVisible} />
+          <ExportButtons onGuidePng={props.onGuidePng} onShareUrl={props.onCopyShareUrl} onJson={props.onCopyJson} onText={props.onCopyText} toastVisible={props.toastVisible} toastMessage={props.toastMessage} />
         </Section>
       </div>
     </div>

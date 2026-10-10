@@ -7,6 +7,7 @@ import { useSaveSlots } from '../hooks/useSaveSlots';
 import { useToast } from '../hooks/useToast';
 import { useDsk, useDskImageUrl } from '../hooks/useDsk';
 import { useImages } from '../contexts/imageContext';
+import { buildGuidePng, downloadBlob } from '../utils/guideImage';
 import type { DskSettings } from '../types';
 import { ForwardSidebar } from './ForwardSidebar';
 import { Monitor } from './Monitor';
@@ -24,13 +25,14 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
   /** 編集対象（1〜4: PinP / 0: DSK）。モニタとサイドバーで共有 */
   const [selected, setSelected] = useState(1);
   const toast = useToast();
+  const showToast = toast.show;
   const { resolveUrl } = useImages();
   const [dsk, setDsk] = useDsk();
   const dskImageUrl = useDskImageUrl(dsk);
   const handleDskChange = useCallback((updates: Partial<DskSettings>) => {
     setDsk(prev => ({ ...prev, ...updates }));
   }, [setDsk]);
-  const { slots, saveSlot, loadSlot, deleteSlot } = useSaveSlots(pinps, setPinps);
+  const { slots, saveSlot, renameSlot, loadSlot, deleteSlot } = useSaveSlots(pinps, setPinps);
 
   const clearPreset = useCallback(() => setActivePreset(null), []);
   const dragHandlers = useDragHandlers(setPinps, clearPreset);
@@ -63,16 +65,16 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
   }, [loadSlot]);
 
   const copyShareUrl = useCallback(() => {
-    navigator.clipboard.writeText(location.href).then(toast.show);
-  }, [toast.show]);
+    navigator.clipboard.writeText(location.href).then(() => showToast());
+  }, [showToast]);
 
   const copyJson = useCallback(() => {
-    navigator.clipboard.writeText(buildForwardExportJson(pinps)).then(toast.show);
-  }, [pinps, toast.show]);
+    navigator.clipboard.writeText(buildForwardExportJson(pinps)).then(() => showToast());
+  }, [pinps, showToast]);
 
   const copyText = useCallback(() => {
-    navigator.clipboard.writeText(buildForwardExportText(pinps)).then(toast.show);
-  }, [pinps, toast.show]);
+    navigator.clipboard.writeText(buildForwardExportText(pinps)).then(() => showToast());
+  }, [pinps, showToast]);
 
   const enabledRects = useMemo(() => {
     const rects: (PixelRect & { id: number })[] = [];
@@ -81,6 +83,15 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
     }
     return rects;
   }, [pinps]);
+
+  const downloadGuidePng = useCallback(() => {
+    buildGuidePng(enabledRects)
+      .then(blob => {
+        downloadBlob(blob, 'v160hd-dsk-guide.png');
+        showToast('PNGを保存しました');
+      })
+      .catch(() => showToast('PNGの生成に失敗しました'));
+  }, [enabledRects, showToast]);
 
   const overlaps = useMemo(() => detectOverlaps(enabledRects), [enabledRects]);
   const dskHtml = useMemo(() => buildDskInfo(enabledRects, overlaps), [enabledRects, overlaps]);
@@ -91,14 +102,17 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
     onApplyPreset: applyPreset,
     slots,
     onSaveSlot: saveSlot,
+    onRenameSlot: renameSlot,
     onLoadSlot: handleLoadSlot,
     onDeleteSlot: deleteSlot,
     enabledRects,
     dskHtml,
+    onGuidePng: downloadGuidePng,
     onCopyShareUrl: copyShareUrl,
     onCopyJson: copyJson,
     onCopyText: copyText,
     toastVisible: toast.visible,
+    toastMessage: toast.message,
   };
 
   return (

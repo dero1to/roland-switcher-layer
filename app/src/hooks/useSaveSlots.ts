@@ -23,15 +23,24 @@ export function useSaveSlots(pinps: Record<number, PinPParams>, setPinps: React.
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slots));
   }, [slots]);
 
+  /** 現在のレイアウトを保存（既存スロットは名前を引き継ぐ） */
   const saveSlot = useCallback((idx: number) => {
-    const name = prompt('保存名を入力', slots[idx]?.name || `保存${idx + 1}`);
-    if (name === null) return;
     setSlots(prev => {
       const next = [...prev];
-      next[idx] = { name: name || `保存${idx + 1}`, pinps: JSON.parse(JSON.stringify(pinps)) };
+      next[idx] = { name: prev[idx]?.name || `保存${idx + 1}`, pinps: JSON.parse(JSON.stringify(pinps)) };
       return next;
     });
-  }, [pinps, slots]);
+  }, [pinps]);
+
+  const renameSlot = useCallback((idx: number, name: string) => {
+    setSlots(prev => {
+      const slot = prev[idx];
+      if (!slot) return prev;
+      const next = [...prev];
+      next[idx] = { ...slot, name: name.trim() || `保存${idx + 1}` };
+      return next;
+    });
+  }, []);
 
   const loadSlot = useCallback((idx: number) => {
     const slot = slots[idx];
@@ -46,5 +55,5 @@ export function useSaveSlots(pinps: Record<number, PinPParams>, setPinps: React.
     });
   }, []);
 
-  return { slots, saveSlot, loadSlot, deleteSlot };
+  return { slots, saveSlot, renameSlot, loadSlot, deleteSlot };
 }

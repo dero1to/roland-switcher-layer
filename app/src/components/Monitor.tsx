@@ -130,7 +130,7 @@ export function Monitor({ rects, onRectDrag, onZoomDrag, onImgZoomDrag, onCropHD
               {item.label || `PinP ${item.id}`}
               <small>{r.w}&times;{r.h}</small>
             </div>
-            {interactive && (
+            {interactive && (selectedId === undefined || selectedId === item.id) && (
               <>
                 {/* 左辺: 外(左)に引くと広がる / 右辺: 外(右)に引くと広がる */}
                 <div
