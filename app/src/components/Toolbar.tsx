@@ -11,11 +11,17 @@ interface ToolbarProps {
   onRenameSlot: (idx: number, name: string) => void;
   onLoadSlot: (idx: number) => void;
   onDeleteSlot: (idx: number) => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
-export function Toolbar({ presets, activePreset, onApplyPreset, slots, onSaveSlot, onRenameSlot, onLoadSlot, onDeleteSlot }: ToolbarProps) {
+export function Toolbar({ presets, activePreset, onApplyPreset, slots, onSaveSlot, onRenameSlot, onLoadSlot, onDeleteSlot, onUndo, onRedo, canUndo, canRedo }: ToolbarProps) {
   return (
     <div className="toolbar">
+      <HistoryButtons onUndo={onUndo} onRedo={onRedo} canUndo={canUndo} canRedo={canRedo} />
+      <div className="toolbar-sep" />
       <div className="toolbar-group">
         {presets.map((pr, idx) => (
           <button
@@ -30,6 +36,20 @@ export function Toolbar({ presets, activePreset, onApplyPreset, slots, onSaveSlo
       </div>
       <div className="toolbar-sep" />
       <SlotButtons slots={slots} onSave={onSaveSlot} onRename={onRenameSlot} onLoad={onLoadSlot} onDelete={onDeleteSlot} />
+    </div>
+  );
+}
+
+export function HistoryButtons({ onUndo, onRedo, canUndo, canRedo }: {
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+}) {
+  return (
+    <div className="toolbar-group">
+      <button className="history-btn" onClick={onUndo} disabled={!canUndo} title="元に戻す（Ctrl+Z）" aria-label="元に戻す">↶</button>
+      <button className="history-btn" onClick={onRedo} disabled={!canRedo} title="やり直す（Ctrl+Shift+Z）" aria-label="やり直す">↷</button>
     </div>
   );
 }

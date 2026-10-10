@@ -1,9 +1,10 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { PinPParams, PixelRect } from '../types';
 import { PRESETS } from '../utils/constants';
 import { calcRect, calcSourceView, detectOverlaps, buildDskInfo, buildForwardExportJson, buildForwardExportText } from '../utils/calc';
 import { useDragHandlers } from '../hooks/useDragHandlers';
 import { useSaveSlots } from '../hooks/useSaveSlots';
+import { useHistory } from '../hooks/useHistory';
 import { useToast } from '../hooks/useToast';
 import { useDsk, useDskImageUrl } from '../hooks/useDsk';
 import { useImages } from '../contexts/imageContext';
@@ -35,7 +36,28 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
   const { slots, saveSlot, renameSlot, loadSlot, deleteSlot } = useSaveSlots(pinps, setPinps);
 
   const clearPreset = useCallback(() => setActivePreset(null), []);
-  const dragHandlers = useDragHandlers(setPinps, clearPreset);
+  const dragHandlers = useDragHandlers(pinps, setPinps, clearPreset);
+  const { endDrag } = dragHandlers;
+  const { undo, redo, commit, canUndo, canRedo } = useHistory(pinps, setPinps);
+  const handleDragEnd = useCallback(() => {
+    endDrag();
+    // pointerup 直後の state 反映を待ってから確定
+    setTimeout(commit, 0);
+  }, [endDrag, commit]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      // 入力欄ではブラウザ標準の Undo を優先
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); setActivePreset(null); }
+      else if ((key === 'z' && e.shiftKey) || key === 'y') { e.preventDefault(); redo(); setActivePreset(null); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo]);
 
   const handleUpdate = useCallback((id: number, updates: Partial<PinPParams>) => {
     setPinps(prev => ({ ...prev, [id]: { ...prev[id], ...updates } }));
@@ -111,6 +133,10 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
     onCopyShareUrl: copyShareUrl,
     onCopyJson: copyJson,
     onCopyText: copyText,
+    onUndo: () => { undo(); setActivePreset(null); },
+    onRedo: () => { redo(); setActivePreset(null); },
+    canUndo,
+    canRedo,
     toastVisible: toast.visible,
     toastMessage: toast.message,
   };
@@ -131,6 +157,9 @@ export function ForwardMode({ pinps, setPinps }: ForwardModeProps) {
             selectedId={selected}
             onSelect={setSelected}
             onRectDrag={dragHandlers.handleRectDrag}
+            onDragStart={commit}
+            onDragEnd={handleDragEnd}
+            guides={dragHandlers.guides}
             onZoomDrag={dragHandlers.handleZoomDrag}
             onImgZoomDrag={dragHandlers.handleImgZoomDrag}
             onCropHDrag={dragHandlers.handleCropHDrag}

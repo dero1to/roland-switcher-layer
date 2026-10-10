@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { PixelRect, PresetConfig } from '../types';
 import type { SavedSlot } from '../hooks/useSaveSlots';
-import { SlotButtons } from './Toolbar';
+import { SlotButtons, HistoryButtons } from './Toolbar';
 import { CoordTable } from './BottomBar';
 import { ExportButtons } from './ExportButtons';
 
@@ -22,6 +22,10 @@ interface MobileToolsProps {
   onCopyText: () => void;
   toastVisible: boolean;
   toastMessage: string;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export function MobileTools(props: MobileToolsProps) {
@@ -29,9 +33,12 @@ export function MobileTools(props: MobileToolsProps) {
 
   return (
     <div className={`mobile-tools${open ? ' open' : ''}`}>
-      <button className="mobile-tools-toggle" onClick={() => setOpen(v => !v)}>
-        ツール {open ? '▾' : '▸'}
-      </button>
+      <div className="mobile-tools-head">
+        <button className="mobile-tools-toggle" onClick={() => setOpen(v => !v)}>
+          ツール {open ? '▾' : '▸'}
+        </button>
+        <HistoryButtons onUndo={props.onUndo} onRedo={props.onRedo} canUndo={props.canUndo} canRedo={props.canRedo} />
+      </div>
       <div className="mobile-tools-body">
         <Section label="プリセット">
           <div className="toolbar-group">
